@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SCMS.Models
 {
@@ -6,25 +7,43 @@ namespace SCMS.Models
     {
         [Key]
         public int AppointmentId { get; set; }
-        [Required]
-        public int PatientId { get; set; }
+
         [Required]
         public int DoctorId { get; set; }
-        
-        public int? RadiologistId { get; set; }
+
+        public int? CreatedByUserId { get; set; }
+
         [Required]
         public DateTime AppointmentDate { get; set; }
-        public double Price { get; set; }
+
         [Required]
-        public string Status { get; set; } ="Pending"; 
-        public string? DiagnosisSummary { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public TimeSpan StartTime { get; set; }
 
-        public Patient Patient { get; set; } = null!;
-        public Doctor? Doctor { get; set; }
-        public Radiologist? Radiologist { get; set; }
-        public Receptionist? Receptionist { get; set; }
+        [Required]
+        public TimeSpan EndTime { get; set; }
 
-        public Invoice? Invoice { get; set; }
+        public double Price { get; set; }
+
+        [Required]
+        public int Capacity { get; set; }
+
+        public int CurrentCount { get; set; } = 0;
+
+        [Required]
+        public string Status { get; set; } = "Available";
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [NotMapped]
+        public DateTime StartDateTime => AppointmentDate.Date + StartTime;
+
+        [NotMapped]
+        public DateTime EndDateTime => AppointmentDate.Date + EndTime;
+
+        // Navigation
+        public Doctor Doctor { get; set; } = null!;
+        public User? CreatedByUser { get; set; }
+
+        public ICollection<AppointmentBooking> Bookings { get; set; } = new List<AppointmentBooking>();
     }
 }

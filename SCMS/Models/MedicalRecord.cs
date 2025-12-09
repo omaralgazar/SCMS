@@ -20,7 +20,7 @@ namespace SCMS.Models
         public int? PrescriptionId { get; set; }
 
         public string? Description { get; set; }
-        public string? FilePath { get; set; }
+       
 
         public DateTime RecordDate { get; set; } = DateTime.UtcNow;
 

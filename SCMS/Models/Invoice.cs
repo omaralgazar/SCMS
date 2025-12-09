@@ -7,13 +7,18 @@ namespace SCMS.Models
     {
         [Key]
         public int InvoiceId { get; set; }
+
         [Required]
-        [ForeignKey(nameof(Appointment))]
-        public int AppointmentId { get; set; }
+        public int BookingId { get; set; }
+
         [Required]
         public double TotalAmount { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public Appointment Appointment { get; set; } = null!;
+        public string Status { get; set; } = "Not Billed yet";
+
+        [ForeignKey(nameof(BookingId))]
+        public AppointmentBooking AppointmentBooking { get; set; } = null!;
     }
 }

@@ -224,14 +224,18 @@ namespace SCMS.Migrations
                 {
                     AppointmentId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    PatientId = table.Column<int>(type: "int", nullable: false),
                     DoctorId = table.Column<int>(type: "int", nullable: false),
-                    RadiologistId = table.Column<int>(type: "int", nullable: true),
+                    CreatedByUserId = table.Column<int>(type: "int", nullable: true),
                     AppointmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     Price = table.Column<double>(type: "float", nullable: false),
+                    Capacity = table.Column<int>(type: "int", nullable: false),
+                    CurrentCount = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DiagnosisSummary = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PatientId = table.Column<int>(type: "int", nullable: true),
+                    RadiologistId = table.Column<int>(type: "int", nullable: true),
                     ReceptionistId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -247,8 +251,7 @@ namespace SCMS.Migrations
                         name: "FK_Appointments_Patients_PatientId",
                         column: x => x.PatientId,
                         principalTable: "Patients",
-                        principalColumn: "PatientId",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "PatientId");
                     table.ForeignKey(
                         name: "FK_Appointments_Radiologists_RadiologistId",
                         column: x => x.RadiologistId,
@@ -259,6 +262,11 @@ namespace SCMS.Migrations
                         column: x => x.ReceptionistId,
                         principalTable: "Receptionists",
                         principalColumn: "ReceptionistId");
+                    table.ForeignKey(
+                        name: "FK_Appointments_Users_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId");
                 });
 
             migrationBuilder.CreateTable(
@@ -304,23 +312,31 @@ namespace SCMS.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Invoices",
+                name: "AppointmentBookings",
                 columns: table => new
                 {
-                    InvoiceId = table.Column<int>(type: "int", nullable: false)
+                    BookingId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AppointmentId = table.Column<int>(type: "int", nullable: false),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PatientId = table.Column<int>(type: "int", nullable: false),
+                    OrderNumber = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Invoices", x => x.InvoiceId);
+                    table.PrimaryKey("PK_AppointmentBookings", x => x.BookingId);
                     table.ForeignKey(
-                        name: "FK_Invoices_Appointments_AppointmentId",
+                        name: "FK_AppointmentBookings_Appointments_AppointmentId",
                         column: x => x.AppointmentId,
                         principalTable: "Appointments",
                         principalColumn: "AppointmentId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AppointmentBookings_Patients_PatientId",
+                        column: x => x.PatientId,
+                        principalTable: "Patients",
+                        principalColumn: "PatientId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -361,6 +377,28 @@ namespace SCMS.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Invoices",
+                columns: table => new
+                {
+                    InvoiceId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BookingId = table.Column<int>(type: "int", nullable: false),
+                    TotalAmount = table.Column<double>(type: "float", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Invoices", x => x.InvoiceId);
+                    table.ForeignKey(
+                        name: "FK_Invoices_AppointmentBookings_BookingId",
+                        column: x => x.BookingId,
+                        principalTable: "AppointmentBookings",
+                        principalColumn: "BookingId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MedicalRecords",
                 columns: table => new
                 {
@@ -370,7 +408,6 @@ namespace SCMS.Migrations
                     RadiologyResultId = table.Column<int>(type: "int", nullable: true),
                     PrescriptionId = table.Column<int>(type: "int", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RecordDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -391,7 +428,8 @@ namespace SCMS.Migrations
                         name: "FK_MedicalRecords_RadiologyResults_RadiologyResultId",
                         column: x => x.RadiologyResultId,
                         principalTable: "RadiologyResults",
-                        principalColumn: "ResultId");
+                        principalColumn: "ResultId",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -399,6 +437,21 @@ namespace SCMS.Migrations
                 table: "Admin",
                 column: "StaffId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppointmentBookings_AppointmentId",
+                table: "AppointmentBookings",
+                column: "AppointmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppointmentBookings_PatientId",
+                table: "AppointmentBookings",
+                column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_CreatedByUserId",
+                table: "Appointments",
+                column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Appointments_DoctorId",
@@ -437,9 +490,9 @@ namespace SCMS.Migrations
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Invoices_AppointmentId",
+                name: "IX_Invoices_BookingId",
                 table: "Invoices",
-                column: "AppointmentId",
+                column: "BookingId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -544,16 +597,19 @@ namespace SCMS.Migrations
                 name: "MedicalRecords");
 
             migrationBuilder.DropTable(
-                name: "Appointments");
+                name: "AppointmentBookings");
 
             migrationBuilder.DropTable(
                 name: "RadiologyResults");
 
             migrationBuilder.DropTable(
-                name: "Receptionists");
+                name: "Appointments");
 
             migrationBuilder.DropTable(
                 name: "RadiologyRequests");
+
+            migrationBuilder.DropTable(
+                name: "Receptionists");
 
             migrationBuilder.DropTable(
                 name: "Prescriptions");

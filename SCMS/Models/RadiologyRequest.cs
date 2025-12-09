@@ -9,7 +9,6 @@ namespace SCMS.Models
         [Key]
         public int RequestId { get; set; }
 
-
         [Required]
         [ForeignKey(nameof(Patient))]
         public int PatientId { get; set; }
@@ -24,16 +23,14 @@ namespace SCMS.Models
         [ForeignKey(nameof(Radiologist))]
         public int? RadiologistId { get; set; }
 
-
         [Required]
-        public string TestName { get; set; } = null!;  
+        public string TestName { get; set; } = null!;
 
-        public string? ClinicalNotes { get; set; }    
+        public string? ClinicalNotes { get; set; }
 
-        public string Status { get; set; } = "Pending"; 
+        public string Status { get; set; } = "Pending";
 
         public DateTime RequestDate { get; set; } = DateTime.UtcNow;
-
 
         public Patient Patient { get; set; } = null!;
         public Doctor Doctor { get; set; } = null!;

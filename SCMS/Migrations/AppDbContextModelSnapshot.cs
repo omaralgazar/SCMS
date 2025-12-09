@@ -56,16 +56,25 @@ namespace SCMS.Migrations
                     b.Property<DateTime>("AppointmentDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DiagnosisSummary")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentCount")
+                        .HasColumnType("int");
 
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PatientId")
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<int?>("PatientId")
                         .HasColumnType("int");
 
                     b.Property<double>("Price")
@@ -77,11 +86,16 @@ namespace SCMS.Migrations
                     b.Property<int?>("ReceptionistId")
                         .HasColumnType("int");
 
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AppointmentId");
+
+                    b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("DoctorId");
 
@@ -92,6 +106,39 @@ namespace SCMS.Migrations
                     b.HasIndex("ReceptionistId");
 
                     b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("SCMS.Models.AppointmentBooking", b =>
+                {
+                    b.Property<int>("BookingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BookingId"));
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("BookingId");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("AppointmentBookings");
                 });
 
             modelBuilder.Entity("SCMS.Models.Doctor", b =>
@@ -160,18 +207,22 @@ namespace SCMS.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InvoiceId"));
 
-                    b.Property<int>("AppointmentId")
+                    b.Property<int>("BookingId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("TotalAmount")
+                        .HasColumnType("float");
 
                     b.HasKey("InvoiceId");
 
-                    b.HasIndex("AppointmentId")
+                    b.HasIndex("BookingId")
                         .IsUnique();
 
                     b.ToTable("Invoices");
@@ -186,9 +237,6 @@ namespace SCMS.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecordId"));
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PatientId")
@@ -517,33 +565,50 @@ namespace SCMS.Migrations
 
             modelBuilder.Entity("SCMS.Models.Appointment", b =>
                 {
+                    b.HasOne("SCMS.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId");
+
                     b.HasOne("SCMS.Models.Doctor", "Doctor")
                         .WithMany("Appointments")
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SCMS.Models.Patient", "Patient")
+                    b.HasOne("SCMS.Models.Patient", null)
                         .WithMany("Appointments")
+                        .HasForeignKey("PatientId");
+
+                    b.HasOne("SCMS.Models.Radiologist", null)
+                        .WithMany("Appointments")
+                        .HasForeignKey("RadiologistId");
+
+                    b.HasOne("SCMS.Models.Receptionist", null)
+                        .WithMany("AppointmentsCreated")
+                        .HasForeignKey("ReceptionistId");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("SCMS.Models.AppointmentBooking", b =>
+                {
+                    b.HasOne("SCMS.Models.Appointment", "Appointment")
+                        .WithMany("Bookings")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SCMS.Models.Patient", "Patient")
+                        .WithMany("AppointmentBookings")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SCMS.Models.Radiologist", "Radiologist")
-                        .WithMany("Appointments")
-                        .HasForeignKey("RadiologistId");
-
-                    b.HasOne("SCMS.Models.Receptionist", "Receptionist")
-                        .WithMany("AppointmentsCreated")
-                        .HasForeignKey("ReceptionistId");
-
-                    b.Navigation("Doctor");
+                    b.Navigation("Appointment");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("Radiologist");
-
-                    b.Navigation("Receptionist");
                 });
 
             modelBuilder.Entity("SCMS.Models.Doctor", b =>
@@ -578,13 +643,13 @@ namespace SCMS.Migrations
 
             modelBuilder.Entity("SCMS.Models.Invoice", b =>
                 {
-                    b.HasOne("SCMS.Models.Appointment", "Appointment")
+                    b.HasOne("SCMS.Models.AppointmentBooking", "AppointmentBooking")
                         .WithOne("Invoice")
-                        .HasForeignKey("SCMS.Models.Invoice", "AppointmentId")
+                        .HasForeignKey("SCMS.Models.Invoice", "BookingId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Appointment");
+                    b.Navigation("AppointmentBooking");
                 });
 
             modelBuilder.Entity("SCMS.Models.MedicalRecord", b =>
@@ -601,7 +666,8 @@ namespace SCMS.Migrations
 
                     b.HasOne("SCMS.Models.RadiologyResult", "RadiologyResult")
                         .WithMany("MedicalRecords")
-                        .HasForeignKey("RadiologyResultId");
+                        .HasForeignKey("RadiologyResultId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Patient");
 
@@ -729,6 +795,11 @@ namespace SCMS.Migrations
 
             modelBuilder.Entity("SCMS.Models.Appointment", b =>
                 {
+                    b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("SCMS.Models.AppointmentBooking", b =>
+                {
                     b.Navigation("Invoice");
                 });
 
@@ -743,6 +814,8 @@ namespace SCMS.Migrations
 
             modelBuilder.Entity("SCMS.Models.Patient", b =>
                 {
+                    b.Navigation("AppointmentBookings");
+
                     b.Navigation("Appointments");
 
                     b.Navigation("Feedbacks");
