@@ -1,5 +1,23 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿@model List<SCMS.Models.Feedback>
+
+<h2>Doctor Feedback</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Patient</th>
+            <th>Feedback</th>
+            <th>Date Submitted</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var feedback in Model)
+        {
+            <tr>
+                <td>@feedback.Patient.FullName</td>
+                <td>@feedback.Content</td>
+                <td>@feedback.SubmittedAt.ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

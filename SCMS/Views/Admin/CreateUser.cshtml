@@ -1,5 +1,40 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model SCMS.ViewModels.CreateUserVm
+
 @{
+    ViewData["Title"] = "Create User";
+    Layout = "_Layout";
 }
+
+<div class="container" style="max-width:500px; margin-top:50px;">
+    <div class="card" style="padding:30px;">
+        <h1 style="color: var(--primary); font-size:28px; margin-bottom:20px;">➕ Create User</h1>
+
+        <form asp-action="CreateUser" method="post">
+            <label>Full Name</label>
+            <input asp-for="FullName" placeholder="Enter full name" />
+
+            <label>Email</label>
+            <input asp-for="Email" placeholder="Enter email" />
+
+            <label>Phone</label>
+            <input asp-for="Phone" placeholder="Enter phone" />
+
+            <label>Username</label>
+            <input asp-for="Username" placeholder="Enter username" />
+
+            <label>Password</label>
+            <input asp-for="Password" type="password" placeholder="Enter password" />
+
+            <label>User Type</label>
+            <select asp-for="UserType">
+                <option value="" disabled selected>Select user type</option>
+                <option value="Admin">Admin</option>
+                <option value="Doctor">Doctor</option>
+                <option value="Receptionist">Receptionist</option>
+                <option value="Patient">Patient</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:20px;">Create</button>
+        </form>
+    </div>
+</div>

@@ -1,5 +1,28 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
+﻿<table class="table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Doctor</th>
+            <th>Patients</th>
+            <th>Status</th>
+            <th>Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var appointment in Model)
+        {
+            <tr>
+                <td>@appointment.AppointmentDate.ToShortDateString()</td>
+                <td>@appointment.Doctor.FullName</td>
+                <td>
+                    @foreach (var booking in appointment.Bookings)
+                    {
+                        <div>@booking.Patient.FullName</div>
+                    }
+                </td>
+                <td>@appointment.Status</td>
+                <td>@appointment.Price</td>
+            </tr>
+        }
+    </tbody>
+</table>

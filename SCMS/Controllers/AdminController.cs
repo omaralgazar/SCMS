@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCMS.Models;
 using SCMS.ViewModels;
@@ -14,6 +16,7 @@ namespace SCMS.Controllers
             _context = context;
         }
 
+        // ================= Dashboard =================
         public async Task<IActionResult> Dashboard()
         {
             var vm = new AdminDashboardVm
@@ -41,6 +44,7 @@ namespace SCMS.Controllers
             return View(vm);
         }
 
+        // ================= Users List =================
         public async Task<IActionResult> Users()
         {
             var users = await _context.Users
@@ -57,5 +61,139 @@ namespace SCMS.Controllers
 
             return View(users);
         }
+
+        // ================= Activity Log =================
+        public async Task<IActionResult> ActivityLog()
+        {
+            var logs = await _context.ActivityLog
+                                     .OrderByDescending(l => l.DateTime)
+                                     .ToListAsync();
+
+            return View(logs);
+        }
+
+        // ================= Appointments Overview =================
+        public async Task<IActionResult> AppointmentsOverview()
+        {
+            var appointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .Include(a => a.Bookings)
+                    .ThenInclude(b => b.Patient)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+
+            return View(appointments);
+        }
+
+        // ================= Create User =================
+        [HttpGet]
+        public IActionResult CreateUser()
+        {
+            return View(new CreateUserVm());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateUser(CreateUserVm vm)
+        {
+            if (!ModelState.IsValid)
+                return View(vm);
+
+            if (await _context.Users.AnyAsync(u => u.Username == vm.Username))
+            {
+                ModelState.AddModelError("", "Username already exists");
+                return View(vm);
+            }
+
+            // Hash Password
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var hash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                vm.Password,
+                salt,
+                KeyDerivationPrf.HMACSHA256,
+                100000,
+                32
+            ));
+            var passwordHash = $"{Convert.ToBase64String(salt)}.{hash}";
+
+            // Create user based on type
+            SCMS.Models.User dbUser = vm.UserType switch
+            {
+                "Admin" => new Admin(),
+                "Doctor" => new Doctor(),
+                "Receptionist" => new Receptionist(),
+                "Patient" => new Patient(),
+                _ => new SCMS.Models.User()
+            };
+
+            dbUser.FullName = vm.FullName;
+            dbUser.Email = vm.Email;
+            dbUser.Phone = vm.Phone;
+            dbUser.Username = vm.Username;
+            dbUser.PasswordHash = passwordHash;
+            dbUser.IsActive = true;
+
+            _context.Users.Add(dbUser);
+            await _context.SaveChangesAsync();
+
+            TempData["Message"] = "User created successfully!";
+            return RedirectToAction("Users");
+        }
+
+        // ================= Edit User =================
+        [HttpGet]
+        public async Task<IActionResult> EditUser(int id)
+        {
+            var dbUser = await _context.Users.FindAsync(id);
+            if (dbUser == null) return NotFound();
+
+            return View(dbUser);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditUser(SCMS.Models.User model, string UserType)
+        {
+            var dbUser = await _context.Users.FindAsync(model.UserId);
+            if (dbUser == null) return NotFound();
+
+            dbUser.FullName = model.FullName;
+            dbUser.Email = model.Email;
+            dbUser.Phone = model.Phone;
+
+            // تغيير نوع المستخدم إذا لزم الأمر
+            if (!string.IsNullOrEmpty(UserType) && dbUser.GetType().Name != UserType)
+            {
+                SCMS.Models.User newUser = UserType switch
+                {
+                    "Admin" => new Admin(),
+                    "Doctor" => new Doctor(),
+                    "Receptionist" => new Receptionist(),
+                    "Radiologist" => new Radiologist(),
+                    "Patient" => new Patient(),
+                    _ => dbUser
+                };
+
+                newUser.UserId = dbUser.UserId;
+                newUser.FullName = dbUser.FullName;
+                newUser.Email = dbUser.Email;
+                newUser.Phone = dbUser.Phone;
+                newUser.Username = dbUser.Username;
+                newUser.PasswordHash = dbUser.PasswordHash;
+                newUser.IsActive = dbUser.IsActive;
+                newUser.CreatedAt = dbUser.CreatedAt;
+
+                _context.Entry(dbUser).State = EntityState.Detached;
+                _context.Users.Update(newUser);
+            }
+            else
+            {
+                _context.Users.Update(dbUser);
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Users");
+        }
+       
+
+
     }
 }

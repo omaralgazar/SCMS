@@ -39,5 +39,7 @@ namespace SCMS.ViewModels
 
             public bool RememberMe { get; set; }
         }
-    }
+    
+
+}
 

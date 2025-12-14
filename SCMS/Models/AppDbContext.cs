@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace SCMS.Models
 {
@@ -28,10 +31,13 @@ namespace SCMS.Models
         public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
         public DbSet<ChatAttachment> ChatAttachments { get; set; } = null!;
 
+        public DbSet<ActivityLog> ActivityLog { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // ===== Discriminator =====
             modelBuilder.Entity<User>()
                 .HasDiscriminator<string>("Discriminator")
                 .HasValue<User>("User")
@@ -42,6 +48,29 @@ namespace SCMS.Models
                 .HasValue<Receptionist>("Receptionist")
                 .HasValue<Admin>("Admin");
 
+            // ===== Seed Admin =====
+            var adminSalt = RandomNumberGenerator.GetBytes(16);
+            var adminHash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                "Admin@123", // كلمة المرور الافتراضية
+                adminSalt,
+                KeyDerivationPrf.HMACSHA256,
+                100000,
+                32
+            ));
+            var passwordHash = $"{Convert.ToBase64String(adminSalt)}.{adminHash}";
+
+            modelBuilder.Entity<Admin>().HasData(new Admin
+            {
+                UserId = 1,
+                FullName = "Super Admin",
+                Email = "admin@scms.com",
+                Username = "admin",
+                PasswordHash = passwordHash,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            // ===== Fluent API Relations =====
             modelBuilder.Entity<AppointmentBooking>()
                 .HasOne(b => b.Appointment)
                 .WithMany(a => a.Bookings)
