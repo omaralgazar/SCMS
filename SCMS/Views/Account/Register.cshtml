@@ -1,4 +1,4 @@
-﻿@model SCMS.ViewModels.RegisterVm
+@model SCMS.ViewModels.RegisterVm
 
 @{
     ViewData["Title"] = "Register";
@@ -12,7 +12,7 @@
             Create a new account to access the Smart Clinic System
         </p>
 
-        <!-- show all errors -->
+        <!-- Show all validation errors -->
         <div asp-validation-summary="All" class="text-danger" style="margin-bottom:10px;"></div>
 
         <form asp-action="Register" method="post">
@@ -36,7 +36,6 @@
             <input asp-for="Password" type="password" placeholder="Enter a password" required />
             <span asp-validation-for="Password" class="text-danger"></span>
 
-            <!-- ✅ Confirm Password -->
             <label asp-for="ConfirmPassword">Confirm Password</label>
             <input asp-for="ConfirmPassword" type="password" placeholder="Confirm your password" required />
             <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
@@ -51,7 +50,9 @@
             </select>
             <span asp-validation-for="UserType" class="text-danger"></span>
 
-            <button type="submit" class="btn btn-primary" style="margin-top:20px;">Register</button>
+            <button type="submit" class="btn btn-primary" style="margin-top:20px;">
+                Register
+            </button>
         </form>
 
         <div style="margin-top:15px; text-align:center;">
