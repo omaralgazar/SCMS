@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using SCMS.BL.BLInterfaces;
 using SCMS.Models;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SCMS.BL.BLClasses
 {
@@ -34,9 +34,7 @@ namespace SCMS.BL.BLClasses
         public double GetAverageRateForDoctor(int doctorId)
         {
             var query = _context.Feedbacks.Where(f => f.DoctorId == doctorId);
-            if (!query.Any())
-                return 0;
-
+            if (!query.Any()) return 0;
             return query.Average(f => f.Rate);
         }
     }

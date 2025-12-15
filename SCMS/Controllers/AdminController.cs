@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCMS.Models;
 using SCMS.ViewModels;
@@ -14,14 +16,15 @@ namespace SCMS.Controllers
             _context = context;
         }
 
+        // ================= Dashboard =================
         public async Task<IActionResult> Dashboard()
         {
             var vm = new AdminDashboardVm
             {
-                AdminName = User.Identity?.Name ?? "Admin",
+                AdminName = "Admin",
                 TotalUsers = await _context.Users.CountAsync(),
-                TotalDoctors = await _context.Doctors.CountAsync(),
-                TotalPatients = await _context.Patients.CountAsync(),
+                TotalDoctors = await _context.Set<Doctor>().CountAsync(),
+                TotalPatients = await _context.Set<Patient>().CountAsync(),
                 TodayAppointmentsCount = await _context.Appointments
                     .CountAsync(a => a.AppointmentDate.Date == DateTime.Today),
                 RecentUsers = await _context.Users
@@ -32,14 +35,16 @@ namespace SCMS.Controllers
                         UserId = u.UserId,
                         FullName = u.FullName,
                         Email = u.Email,
-                        Role = u.Role,
+                        UserType = EF.Property<string>(u, "Discriminator"),
                         DateAdded = u.CreatedAt
-                    }).ToListAsync()
+                    })
+                    .ToListAsync()
             };
 
             return View(vm);
         }
 
+        // ================= Users List =================
         public async Task<IActionResult> Users()
         {
             var users = await _context.Users
@@ -49,13 +54,31 @@ namespace SCMS.Controllers
                     UserId = u.UserId,
                     FullName = u.FullName,
                     Email = u.Email,
-                    Role = u.Role,
+                    Phone = u.Phone,
+                    UserType = EF.Property<string>(u, "Discriminator"),
                     DateAdded = u.CreatedAt
-                }).ToListAsync();
+                })
+                .ToListAsync();
 
             return View(users);
         }
 
+       
+
+        // ================= Appointments Overview =================
+        public async Task<IActionResult> AppointmentsOverview()
+        {
+            var appointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .Include(a => a.Bookings)
+                    .ThenInclude(b => b.Patient)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+
+            return View(appointments);
+        }
+
+        // ================= Create User =================
         [HttpGet]
         public IActionResult CreateUser()
         {
@@ -68,84 +91,102 @@ namespace SCMS.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
-            var user = new User
+            if (await _context.Users.AnyAsync(u => u.Username == vm.Username))
             {
-                FullName = vm.FullName,
-                Email = vm.Email,
-                Phone = vm.Phone,
-                Username = vm.Username,
-                PasswordHash = vm.Password, // TODO: Hash
-                Role = vm.Role,
-                IsActive = true
+                ModelState.AddModelError("", "Username already exists");
+                return View(vm);
+            }
+
+            // Hash Password
+            var salt = RandomNumberGenerator.GetBytes(16);
+            var hash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                vm.Password,
+                salt,
+                KeyDerivationPrf.HMACSHA256,
+                100000,
+                32
+            ));
+            var passwordHash = $"{Convert.ToBase64String(salt)}.{hash}";
+
+            // Create user based on type
+            SCMS.Models.User dbUser = vm.UserType switch
+            {
+                "Admin" => new Admin(),
+                "Doctor" => new Doctor(),
+                "Receptionist" => new Receptionist(),
+                "Patient" => new Patient(),
+                _ => new SCMS.Models.User()
             };
 
-            _context.Users.Add(user);
+            dbUser.FullName = vm.FullName;
+            dbUser.Email = vm.Email;
+            dbUser.Phone = vm.Phone;
+            dbUser.Username = vm.Username;
+            dbUser.PasswordHash = passwordHash;
+            dbUser.IsActive = true;
+
+            _context.Users.Add(dbUser);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Users));
+            TempData["Message"] = "User created successfully!";
+            return RedirectToAction("Users");
         }
 
+        // ================= Edit User =================
         [HttpGet]
         public async Task<IActionResult> EditUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            var dbUser = await _context.Users.FindAsync(id);
+            if (dbUser == null) return NotFound();
 
-            var vm = new RegisterVm
-            {
-                FullName = user.FullName,
-                Email = user.Email,
-                Phone = user.Phone,
-                Username = user.Username,
-                Role = user.Role
-            };
-
-            return View(vm);
+            return View(dbUser);
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditUser(int id, RegisterVm vm)
+        public async Task<IActionResult> EditUser(SCMS.Models.User model, string UserType)
         {
-            if (!ModelState.IsValid)
-                return View(vm);
+            var dbUser = await _context.Users.FindAsync(model.UserId);
+            if (dbUser == null) return NotFound();
 
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            dbUser.FullName = model.FullName;
+            dbUser.Email = model.Email;
+            dbUser.Phone = model.Phone;
 
-            user.FullName = vm.FullName;
-            user.Email = vm.Email;
-            user.Phone = vm.Phone;
-            user.Username = vm.Username;
-            user.Role = vm.Role;
+            // تغيير نوع المستخدم إذا لزم الأمر
+            if (!string.IsNullOrEmpty(UserType) && dbUser.GetType().Name != UserType)
+            {
+                SCMS.Models.User newUser = UserType switch
+                {
+                    "Admin" => new Admin(),
+                    "Doctor" => new Doctor(),
+                    "Receptionist" => new Receptionist(),
+                    "Radiologist" => new Radiologist(),
+                    "Patient" => new Patient(),
+                    _ => dbUser
+                };
+
+                newUser.UserId = dbUser.UserId;
+                newUser.FullName = dbUser.FullName;
+                newUser.Email = dbUser.Email;
+                newUser.Phone = dbUser.Phone;
+                newUser.Username = dbUser.Username;
+                newUser.PasswordHash = dbUser.PasswordHash;
+                newUser.IsActive = dbUser.IsActive;
+                newUser.CreatedAt = dbUser.CreatedAt;
+
+                _context.Entry(dbUser).State = EntityState.Detached;
+                _context.Users.Update(newUser);
+            }
+            else
+            {
+                _context.Users.Update(dbUser);
+            }
 
             await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Users));
+            return RedirectToAction("Users");
         }
+       
 
-        public IActionResult Roles()
-        {
-            // لو هتعملي Roles ثابتة ممكن تعرضيها هنا
-            return View();
-        }
 
-        public IActionResult Reports()
-        {
-            return View();
-        }
-
-        public IActionResult ActivityLogs()
-        {
-            return View();
-        }
-
-        public async Task<IActionResult> AppointmentsOverview()
-        {
-            var appointments = await _context.Appointments
-                .Include(a => a.Doctor).ThenInclude(d => d.Staff)
-                .ToListAsync();
-
-            return View(appointments);
-        }
     }
 }

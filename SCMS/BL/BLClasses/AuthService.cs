@@ -19,9 +19,9 @@ namespace SCMS.BL.BLClasses
         public User? Login(string username, string password)
         {
             var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null) return null;
 
-            if (user == null)
-                return null;
+            if (!user.IsActive) return null;
 
             return VerifyPassword(password, user.PasswordHash) ? user : null;
         }
@@ -30,6 +30,7 @@ namespace SCMS.BL.BLClasses
         {
             user.PasswordHash = HashPassword(password);
             user.CreatedAt = DateTime.UtcNow;
+            user.IsActive = true;
 
             _context.Users.Add(user);
             _context.SaveChanges();
@@ -44,7 +45,7 @@ namespace SCMS.BL.BLClasses
 
         public string HashPassword(string password)
         {
-            byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
+            byte[] salt = RandomNumberGenerator.GetBytes(16);
 
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                 password,
@@ -59,14 +60,15 @@ namespace SCMS.BL.BLClasses
 
         public bool VerifyPassword(string password, string hash)
         {
-            if (string.IsNullOrWhiteSpace(hash))
-                return false;
+            if (string.IsNullOrWhiteSpace(hash)) return false;
 
             var parts = hash.Split('.');
-            if (parts.Length != 2)
-                return false;
+            if (parts.Length != 2) return false;
 
-            var salt = Convert.FromBase64String(parts[0]);
+            byte[] salt;
+            try { salt = Convert.FromBase64String(parts[0]); }
+            catch { return false; }
+
             var storedHash = parts[1];
 
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(

@@ -18,29 +18,16 @@ namespace SCMS.BL.BLClasses
 
         public DoctorProfileVm? GetProfile(int doctorId)
         {
-            var doctor = _context.Doctors
-                .Include(d => d.Staff)
-                    .ThenInclude(s => s.User)
-                .FirstOrDefault(d => d.DoctorId == doctorId);
+            var doctor = _context.Doctors.FirstOrDefault(d => d.UserId == doctorId);
+            if (doctor == null) return null;
 
-            if (doctor == null)
-                return null;
+            var feedbackQuery = _context.Feedbacks.Where(f => f.DoctorId == doctorId);
 
-            var feedbackQuery = _context.Feedbacks
-                .Where(f => f.DoctorId == doctorId);
-
-            double averageRate = 0;
-            int feedbackCount = 0;
-
-            if (feedbackQuery.Any())
-            {
-                averageRate = feedbackQuery.Average(f => f.Rate);
-                feedbackCount = feedbackQuery.Count();
-            }
+            double averageRate = feedbackQuery.Any() ? feedbackQuery.Average(f => f.Rate) : 0;
+            int feedbackCount = feedbackQuery.Count();
 
             var upcomingAppointments = _context.Appointments
-                .Where(a => a.DoctorId == doctorId &&
-                            a.AppointmentDate >= DateTime.UtcNow.Date)
+                .Where(a => a.DoctorId == doctorId && a.AppointmentDate >= DateTime.UtcNow.Date)
                 .OrderBy(a => a.AppointmentDate)
                 .ThenBy(a => a.StartTime)
                 .Select(a => new DoctorAppointmentVm
@@ -55,20 +42,18 @@ namespace SCMS.BL.BLClasses
                 })
                 .ToList();
 
-            var vm = new DoctorProfileVm
+            return new DoctorProfileVm
             {
-                DoctorId = doctor.DoctorId,
-                FullName = doctor.Staff.User.FullName,
+                DoctorId = doctor.UserId,
+                FullName = doctor.FullName,
                 Specialization = doctor.Specialization,
                 YearsOfExperience = doctor.YearsOfExperience,
-                DepartmentName = doctor.Staff.DepartmentName,
-                PhoneNumber = doctor.Staff.PhoneNumber,
+                DepartmentName = doctor.DepartmentName,
+                PhoneNumber = doctor.PhoneNumber,
                 AverageRate = averageRate,
                 FeedbackCount = feedbackCount,
                 UpcomingAppointments = upcomingAppointments
             };
-
-            return vm;
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿namespace SCMS.ViewModels
+﻿using System;
+using System.Collections.Generic;
+
+namespace SCMS.ViewModels
 {
     public class DoctorAppointmentVm
     {
@@ -6,8 +9,14 @@
         public DateTime AppointmentDate { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
+
         public int Capacity { get; set; }
         public int CurrentCount { get; set; }
+
+        public int RemainingSlots => Math.Max(0, Capacity - CurrentCount);
+
+        public double Price { get; set; }
+
         public string Status { get; set; } = null!;
     }
 

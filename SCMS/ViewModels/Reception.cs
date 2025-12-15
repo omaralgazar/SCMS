@@ -6,8 +6,7 @@ namespace SCMS.ViewModels
 {
     public class ReceptionDashboardVm
     {
-        public string ReceptionistName { get; set; } = null!;
-
+        public string ReceptionistName { get; set; } = "Receptionist";
         public int TodaysAppointmentsCount { get; set; }
 
         public IEnumerable<AppointmentSummaryVm> TodaysAppointments { get; set; }
@@ -20,8 +19,8 @@ namespace SCMS.ViewModels
     public class PatientListVm
     {
         public string? SearchTerm { get; set; }
-        public int CurrentPage { get; set; }
-        public int TotalPages { get; set; }
+        public int CurrentPage { get; set; } = 1;
+        public int TotalPages { get; set; } = 1;
 
         public IEnumerable<PatientSummaryVm> Patients { get; set; }
             = new List<PatientSummaryVm>();
@@ -29,32 +28,31 @@ namespace SCMS.ViewModels
 
     public class PatientFormVm
     {
-        public int? PatientId { get; set; } // null في Add, فيه قيمة في Edit
+        public int? PatientId { get; set; }
 
-        // User info
-        [Required]
+        [Required, MaxLength(150)]
         public string FullName { get; set; } = null!;
 
-        [Required]
+        [Required, MaxLength(20)]
         public string Phone { get; set; } = null!;
 
-        [Required, EmailAddress]
+        [Required, EmailAddress, MaxLength(150)]
         public string Email { get; set; } = null!;
 
-        // Patient info
-        [Required]
+        [Required, MaxLength(20)]
         public string Gender { get; set; } = null!;
 
         [Required, DataType(DataType.Date)]
         public DateTime DateOfBirth { get; set; }
 
-        [Required]
+        [Required, MaxLength(250)]
         public string Address { get; set; } = null!;
 
+        [MaxLength(1000)]
         public string? MedicalHistorySummary { get; set; }
     }
 
-    public class PatientHeaderVm   // للبانل الشمال في Patient File لو حبيتي
+    public class PatientHeaderVm
     {
         public int PatientId { get; set; }
         public string FullName { get; set; } = null!;

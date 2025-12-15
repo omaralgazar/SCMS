@@ -10,17 +10,13 @@ namespace SCMS.Models
         public int RequestId { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Patient))]
         public int PatientId { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Doctor))]
         public int DoctorId { get; set; }
 
-        [ForeignKey(nameof(Prescription))]
         public int? PrescriptionId { get; set; }
 
-        [ForeignKey(nameof(Radiologist))]
         public int? RadiologistId { get; set; }
 
         [Required]
@@ -32,9 +28,16 @@ namespace SCMS.Models
 
         public DateTime RequestDate { get; set; } = DateTime.UtcNow;
 
+        [ForeignKey(nameof(PatientId))]
         public Patient Patient { get; set; } = null!;
+
+        [ForeignKey(nameof(DoctorId))]
         public Doctor Doctor { get; set; } = null!;
+
+        [ForeignKey(nameof(PrescriptionId))]
         public Prescription? Prescription { get; set; }
+
+        [ForeignKey(nameof(RadiologistId))]
         public Radiologist? Radiologist { get; set; }
 
         public RadiologyResult? Result { get; set; }

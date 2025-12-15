@@ -24,7 +24,7 @@ namespace SCMS.BL.BLClasses
 
         public bool Update(Patient patient)
         {
-            if (!_context.Patients.Any(p => p.PatientId == patient.PatientId))
+            if (!_context.Patients.Any(p => p.UserId == patient.UserId))
                 return false;
 
             _context.Patients.Update(patient);
@@ -34,47 +34,31 @@ namespace SCMS.BL.BLClasses
 
         public bool Delete(int id)
         {
-            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == id);
-            if (patient == null)
-                return false;
-
-            bool hasRelations =
-                _context.AppointmentBookings.Any(b => b.PatientId == id) ||
-                _context.Prescriptions.Any(pr => pr.PatientId == id) ||
-                _context.MedicalRecords.Any(m => m.PatientId == id) ||
-                _context.Feedbacks.Any(f => f.PatientId == id) ||
-                _context.RadiologyRequests.Any(r => r.PatientId == id);
-
-            if (hasRelations)
-                return false;
+            var patient = _context.Patients.FirstOrDefault(p => p.UserId == id);
+            if (patient == null) return false;
 
             _context.Patients.Remove(patient);
             _context.SaveChanges();
             return true;
         }
 
-
-
         public Patient? GetById(int id)
         {
             return _context.Patients
                 .Include(p => p.AppointmentBookings)
-                .FirstOrDefault(p => p.PatientId == id);
+                .FirstOrDefault(p => p.UserId == id);
         }
 
         public List<Patient> GetByName(string name)
         {
             return _context.Patients
-                .Where(p => p.User.FullName.Contains(name))
-                .Include(p => p.User)
+                .Where(p => p.FullName.Contains(name))
                 .ToList();
         }
 
         public List<Patient> GetAll()
         {
-            return _context.Patients
-                .Include(p => p.User)
-                .ToList();
+            return _context.Patients.ToList();
         }
     }
 }

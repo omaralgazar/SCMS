@@ -1,13 +1,13 @@
-﻿namespace SCMS.Models
-{
-    public class Receptionist
-    {
-        public int ReceptionistId { get; set; }
-        public int StaffId { get; set; }
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
+namespace SCMS.Models
+{
+    public class Receptionist : Staff
+    {
+        [Required]
         public string Shift { get; set; } = null!;
 
-        public Staff Staff { get; set; } = null!;
-        public ICollection<Appointment> AppointmentsCreated { get; set; } = new List<Appointment>();
+        public ICollection<ChatThread> ChatThreads { get; set; } = new List<ChatThread>();
     }
 }

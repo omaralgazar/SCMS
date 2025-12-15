@@ -18,23 +18,18 @@ namespace SCMS.BL.BLClasses
 
         public Appointment? Create(Appointment slot)
         {
-            if (slot.Capacity <= 0)
-                return null;
-
-            if (slot.StartTime >= slot.EndTime)
-                return null;
+            if (slot.Capacity <= 0) return null;
+            if (slot.StartTime >= slot.EndTime) return null;
 
             var startDateTime = slot.AppointmentDate.Date + slot.StartTime;
-            if (startDateTime <= DateTime.UtcNow)
-                return null;
+            if (startDateTime <= DateTime.UtcNow) return null;
 
             bool overlaps = _context.Appointments.Any(a =>
                 a.DoctorId == slot.DoctorId &&
                 a.AppointmentDate == slot.AppointmentDate &&
                 !(slot.EndTime <= a.StartTime || slot.StartTime >= a.EndTime));
 
-            if (overlaps)
-                return null;
+            if (overlaps) return null;
 
             _context.Appointments.Add(slot);
             _context.SaveChanges();
@@ -43,21 +38,14 @@ namespace SCMS.BL.BLClasses
 
         public bool Update(Appointment slot)
         {
-            var existing = _context.Appointments
-                .FirstOrDefault(a => a.AppointmentId == slot.AppointmentId);
+            var existing = _context.Appointments.FirstOrDefault(a => a.AppointmentId == slot.AppointmentId);
+            if (existing == null) return false;
 
-            if (existing == null)
-                return false;
-
-            if (slot.Capacity <= 0)
-                return false;
-
-            if (slot.StartTime >= slot.EndTime)
-                return false;
+            if (slot.Capacity <= 0) return false;
+            if (slot.StartTime >= slot.EndTime) return false;
 
             var startDateTime = slot.AppointmentDate.Date + slot.StartTime;
-            if (startDateTime <= DateTime.UtcNow)
-                return false;
+            if (startDateTime <= DateTime.UtcNow) return false;
 
             bool overlaps = _context.Appointments.Any(a =>
                 a.AppointmentId != slot.AppointmentId &&
@@ -65,8 +53,7 @@ namespace SCMS.BL.BLClasses
                 a.AppointmentDate == slot.AppointmentDate &&
                 !(slot.EndTime <= a.StartTime || slot.StartTime >= a.EndTime));
 
-            if (overlaps)
-                return false;
+            if (overlaps) return false;
 
             _context.Entry(existing).CurrentValues.SetValues(slot);
             _context.SaveChanges();
@@ -79,11 +66,8 @@ namespace SCMS.BL.BLClasses
                 .Include(a => a.Bookings)
                 .FirstOrDefault(a => a.AppointmentId == appointmentId);
 
-            if (slot == null)
-                return false;
-
-            if (slot.Bookings.Any())
-                return false;
+            if (slot == null) return false;
+            if (slot.Bookings.Any()) return false;
 
             _context.Appointments.Remove(slot);
             _context.SaveChanges();

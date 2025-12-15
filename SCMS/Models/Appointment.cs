@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SCMS.Models
@@ -40,8 +42,10 @@ namespace SCMS.Models
         [NotMapped]
         public DateTime EndDateTime => AppointmentDate.Date + EndTime;
 
-        // Navigation
+        [ForeignKey(nameof(DoctorId))]
         public Doctor Doctor { get; set; } = null!;
+
+        [ForeignKey(nameof(CreatedByUserId))]
         public User? CreatedByUser { get; set; }
 
         public ICollection<AppointmentBooking> Bookings { get; set; } = new List<AppointmentBooking>();

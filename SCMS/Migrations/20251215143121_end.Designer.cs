@@ -12,8 +12,8 @@ using SCMS.Models;
 namespace SCMS.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251209124005_first")]
-    partial class First
+    [Migration("20251215143121_end")]
+    partial class end
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,29 +24,6 @@ namespace SCMS.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("SCMS.Models.Admin", b =>
-                {
-                    b.Property<int>("AdminId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdminId"));
-
-                    b.Property<string>("AccessLevel")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StaffId")
-                        .HasColumnType("int");
-
-                    b.HasKey("AdminId");
-
-                    b.HasIndex("StaffId")
-                        .IsUnique();
-
-                    b.ToTable("Admin");
-                });
 
             modelBuilder.Entity("SCMS.Models.Appointment", b =>
                 {
@@ -77,17 +54,8 @@ namespace SCMS.Migrations
                     b.Property<TimeSpan>("EndTime")
                         .HasColumnType("time");
 
-                    b.Property<int?>("PatientId")
-                        .HasColumnType("int");
-
                     b.Property<double>("Price")
                         .HasColumnType("float");
-
-                    b.Property<int?>("RadiologistId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReceptionistId")
-                        .HasColumnType("int");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
@@ -101,12 +69,6 @@ namespace SCMS.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("DoctorId");
-
-                    b.HasIndex("PatientId");
-
-                    b.HasIndex("RadiologistId");
-
-                    b.HasIndex("ReceptionistId");
 
                     b.ToTable("Appointments");
                 });
@@ -144,30 +106,106 @@ namespace SCMS.Migrations
                     b.ToTable("AppointmentBookings");
                 });
 
-            modelBuilder.Entity("SCMS.Models.Doctor", b =>
+            modelBuilder.Entity("SCMS.Models.ChatAttachment", b =>
                 {
-                    b.Property<int>("DoctorId")
+                    b.Property<int>("AttachmentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DoctorId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttachmentId"));
 
-                    b.Property<string>("Specialization")
+                    b.Property<string>("ContentType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("StaffId")
+                    b.Property<int>("MessageId")
                         .HasColumnType("int");
 
-                    b.Property<int>("YearsOfExperience")
+                    b.HasKey("AttachmentId");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("ChatAttachments");
+                });
+
+            modelBuilder.Entity("SCMS.Models.ChatMessage", b =>
+                {
+                    b.Property<int>("MessageId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.HasKey("DoctorId");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
 
-                    b.HasIndex("StaffId")
-                        .IsUnique();
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("Doctors");
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ReceiverUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SenderType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SenderUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ThreadId")
+                        .HasColumnType("int");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ReceiverUserId");
+
+                    b.HasIndex("SenderUserId");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("SCMS.Models.ChatThread", b =>
+                {
+                    b.Property<int>("ThreadId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ThreadId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReceptionistId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ThreadId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("ReceptionistId");
+
+                    b.ToTable("ChatThreads");
                 });
 
             modelBuilder.Entity("SCMS.Models.Feedback", b =>
@@ -265,42 +303,6 @@ namespace SCMS.Migrations
                     b.ToTable("MedicalRecords");
                 });
 
-            modelBuilder.Entity("SCMS.Models.Patient", b =>
-                {
-                    b.Property<int>("PatientId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientId"));
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Age")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Gender")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MedicalHistorySummary")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PatientId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Patients");
-                });
-
             modelBuilder.Entity("SCMS.Models.Prescription", b =>
                 {
                     b.Property<int>("PrescriptionId")
@@ -336,25 +338,6 @@ namespace SCMS.Migrations
                     b.HasIndex("PatientId");
 
                     b.ToTable("Prescriptions");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Radiologist", b =>
-                {
-                    b.Property<int>("RadiologistId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RadiologistId"));
-
-                    b.Property<int>("StaffId")
-                        .HasColumnType("int");
-
-                    b.HasKey("RadiologistId");
-
-                    b.HasIndex("StaffId")
-                        .IsUnique();
-
-                    b.ToTable("Radiologists");
                 });
 
             modelBuilder.Entity("SCMS.Models.RadiologyRequest", b =>
@@ -415,9 +398,6 @@ namespace SCMS.Migrations
                     b.Property<string>("ImagePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PatientId")
-                        .HasColumnType("int");
-
                     b.Property<int>("RadiologistId")
                         .HasColumnType("int");
 
@@ -437,75 +417,12 @@ namespace SCMS.Migrations
 
                     b.HasKey("ResultId");
 
-                    b.HasIndex("PatientId");
-
                     b.HasIndex("RadiologistId");
 
                     b.HasIndex("RequestId")
                         .IsUnique();
 
                     b.ToTable("RadiologyResults");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Receptionist", b =>
-                {
-                    b.Property<int>("ReceptionistId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReceptionistId"));
-
-                    b.Property<string>("Shift")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StaffId")
-                        .HasColumnType("int");
-
-                    b.HasKey("ReceptionistId");
-
-                    b.HasIndex("StaffId")
-                        .IsUnique();
-
-                    b.ToTable("Receptionists");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Staff", b =>
-                {
-                    b.Property<int>("StaffId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StaffId"));
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DepartmentName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EmployeeName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("Salary")
-                        .HasColumnType("float");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("StaffId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Staff");
                 });
 
             modelBuilder.Entity("SCMS.Models.User", b =>
@@ -518,6 +435,11 @@ namespace SCMS.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("nvarchar(13)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -537,13 +459,8 @@ namespace SCMS.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -553,17 +470,95 @@ namespace SCMS.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("Users");
+
+                    b.HasDiscriminator().HasValue("User");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("SCMS.Models.Admin", b =>
                 {
-                    b.HasOne("SCMS.Models.Staff", "Staff")
-                        .WithOne("Admin")
-                        .HasForeignKey("SCMS.Models.Admin", "StaffId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.HasBaseType("SCMS.Models.User");
 
-                    b.Navigation("Staff");
+                    b.Property<string>("AccessLevel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("Admin");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Patient", b =>
+                {
+                    b.HasBaseType("SCMS.Models.User");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Age")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MedicalHistorySummary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("Patient");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Staff", b =>
+                {
+                    b.HasBaseType("SCMS.Models.User");
+
+                    b.Property<string>("DepartmentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Salary")
+                        .HasColumnType("float");
+
+                    b.HasDiscriminator().HasValue("Staff");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Doctor", b =>
+                {
+                    b.HasBaseType("SCMS.Models.Staff");
+
+                    b.Property<string>("Specialization")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("YearsOfExperience")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue("Doctor");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Radiologist", b =>
+                {
+                    b.HasBaseType("SCMS.Models.Staff");
+
+                    b.HasDiscriminator().HasValue("Radiologist");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Receptionist", b =>
+                {
+                    b.HasBaseType("SCMS.Models.Staff");
+
+                    b.Property<string>("Shift")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("Receptionist");
                 });
 
             modelBuilder.Entity("SCMS.Models.Appointment", b =>
@@ -577,18 +572,6 @@ namespace SCMS.Migrations
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("SCMS.Models.Patient", null)
-                        .WithMany("Appointments")
-                        .HasForeignKey("PatientId");
-
-                    b.HasOne("SCMS.Models.Radiologist", null)
-                        .WithMany("Appointments")
-                        .HasForeignKey("RadiologistId");
-
-                    b.HasOne("SCMS.Models.Receptionist", null)
-                        .WithMany("AppointmentsCreated")
-                        .HasForeignKey("ReceptionistId");
 
                     b.Navigation("CreatedByUser");
 
@@ -614,15 +597,59 @@ namespace SCMS.Migrations
                     b.Navigation("Patient");
                 });
 
-            modelBuilder.Entity("SCMS.Models.Doctor", b =>
+            modelBuilder.Entity("SCMS.Models.ChatAttachment", b =>
                 {
-                    b.HasOne("SCMS.Models.Staff", "Staff")
-                        .WithOne("Doctor")
-                        .HasForeignKey("SCMS.Models.Doctor", "StaffId")
+                    b.HasOne("SCMS.Models.ChatMessage", "Message")
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
+            modelBuilder.Entity("SCMS.Models.ChatMessage", b =>
+                {
+                    b.HasOne("SCMS.Models.User", "ReceiverUser")
+                        .WithMany()
+                        .HasForeignKey("ReceiverUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SCMS.Models.User", "SenderUser")
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Staff");
+                    b.HasOne("SCMS.Models.ChatThread", "Thread")
+                        .WithMany("Messages")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReceiverUser");
+
+                    b.Navigation("SenderUser");
+
+                    b.Navigation("Thread");
+                });
+
+            modelBuilder.Entity("SCMS.Models.ChatThread", b =>
+                {
+                    b.HasOne("SCMS.Models.Patient", "Patient")
+                        .WithMany("ChatThreads")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SCMS.Models.Receptionist", "Receptionist")
+                        .WithMany("ChatThreads")
+                        .HasForeignKey("ReceptionistId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("Receptionist");
                 });
 
             modelBuilder.Entity("SCMS.Models.Feedback", b =>
@@ -679,17 +706,6 @@ namespace SCMS.Migrations
                     b.Navigation("RelatedPrescription");
                 });
 
-            modelBuilder.Entity("SCMS.Models.Patient", b =>
-                {
-                    b.HasOne("SCMS.Models.User", "User")
-                        .WithOne("Patient")
-                        .HasForeignKey("SCMS.Models.Patient", "UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SCMS.Models.Prescription", b =>
                 {
                     b.HasOne("SCMS.Models.Doctor", "Doctor")
@@ -707,17 +723,6 @@ namespace SCMS.Migrations
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Radiologist", b =>
-                {
-                    b.HasOne("SCMS.Models.Staff", "Staff")
-                        .WithOne("Radiologist")
-                        .HasForeignKey("SCMS.Models.Radiologist", "StaffId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Staff");
                 });
 
             modelBuilder.Entity("SCMS.Models.RadiologyRequest", b =>
@@ -735,7 +740,7 @@ namespace SCMS.Migrations
                         .IsRequired();
 
                     b.HasOne("SCMS.Models.Prescription", "Prescription")
-                        .WithMany("RadiologyRequest")
+                        .WithMany("RadiologyRequests")
                         .HasForeignKey("PrescriptionId");
 
                     b.HasOne("SCMS.Models.Radiologist", "Radiologist")
@@ -753,10 +758,6 @@ namespace SCMS.Migrations
 
             modelBuilder.Entity("SCMS.Models.RadiologyResult", b =>
                 {
-                    b.HasOne("SCMS.Models.Patient", null)
-                        .WithMany("RadiologyResults")
-                        .HasForeignKey("PatientId");
-
                     b.HasOne("SCMS.Models.Radiologist", "Radiologist")
                         .WithMany("RadiologyResults")
                         .HasForeignKey("RadiologistId")
@@ -774,28 +775,6 @@ namespace SCMS.Migrations
                     b.Navigation("Request");
                 });
 
-            modelBuilder.Entity("SCMS.Models.Receptionist", b =>
-                {
-                    b.HasOne("SCMS.Models.Staff", "Staff")
-                        .WithOne("Receptionist")
-                        .HasForeignKey("SCMS.Models.Receptionist", "StaffId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Staff");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Staff", b =>
-                {
-                    b.HasOne("SCMS.Models.User", "User")
-                        .WithOne("Staff")
-                        .HasForeignKey("SCMS.Models.Staff", "UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SCMS.Models.Appointment", b =>
                 {
                     b.Navigation("Bookings");
@@ -806,46 +785,16 @@ namespace SCMS.Migrations
                     b.Navigation("Invoice");
                 });
 
-            modelBuilder.Entity("SCMS.Models.Doctor", b =>
+            modelBuilder.Entity("SCMS.Models.ChatThread", b =>
                 {
-                    b.Navigation("Appointments");
-
-                    b.Navigation("Feedbacks");
-
-                    b.Navigation("Prescriptions");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Patient", b =>
-                {
-                    b.Navigation("AppointmentBookings");
-
-                    b.Navigation("Appointments");
-
-                    b.Navigation("Feedbacks");
-
-                    b.Navigation("MedicalRecords");
-
-                    b.Navigation("Prescriptions");
-
-                    b.Navigation("RadiologyRequests");
-
-                    b.Navigation("RadiologyResults");
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("SCMS.Models.Prescription", b =>
                 {
                     b.Navigation("MedicalRecords");
 
-                    b.Navigation("RadiologyRequest");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Radiologist", b =>
-                {
-                    b.Navigation("Appointments");
-
                     b.Navigation("RadiologyRequests");
-
-                    b.Navigation("RadiologyResults");
                 });
 
             modelBuilder.Entity("SCMS.Models.RadiologyRequest", b =>
@@ -858,27 +807,40 @@ namespace SCMS.Migrations
                     b.Navigation("MedicalRecords");
                 });
 
+            modelBuilder.Entity("SCMS.Models.Patient", b =>
+                {
+                    b.Navigation("AppointmentBookings");
+
+                    b.Navigation("ChatThreads");
+
+                    b.Navigation("Feedbacks");
+
+                    b.Navigation("MedicalRecords");
+
+                    b.Navigation("Prescriptions");
+
+                    b.Navigation("RadiologyRequests");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Doctor", b =>
+                {
+                    b.Navigation("Appointments");
+
+                    b.Navigation("Feedbacks");
+
+                    b.Navigation("Prescriptions");
+                });
+
+            modelBuilder.Entity("SCMS.Models.Radiologist", b =>
+                {
+                    b.Navigation("RadiologyRequests");
+
+                    b.Navigation("RadiologyResults");
+                });
+
             modelBuilder.Entity("SCMS.Models.Receptionist", b =>
                 {
-                    b.Navigation("AppointmentsCreated");
-                });
-
-            modelBuilder.Entity("SCMS.Models.Staff", b =>
-                {
-                    b.Navigation("Admin");
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Radiologist");
-
-                    b.Navigation("Receptionist");
-                });
-
-            modelBuilder.Entity("SCMS.Models.User", b =>
-                {
-                    b.Navigation("Patient");
-
-                    b.Navigation("Staff");
+                    b.Navigation("ChatThreads");
                 });
 #pragma warning restore 612, 618
         }

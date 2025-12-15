@@ -22,16 +22,11 @@ namespace SCMS.BL.BLClasses
                 .Include(a => a.Bookings)
                 .FirstOrDefault(a => a.AppointmentId == appointmentId);
 
-            if (appointment == null)
-                return null;
+            if (appointment == null) return null;
+            if (appointment.Status != "Available") return null;
 
-            if (appointment.Status != "Available")
-                return null;
-
-            var now = DateTime.UtcNow;
             var startDateTime = appointment.AppointmentDate.Date + appointment.StartTime;
-            if (startDateTime <= now)
-                return null;
+            if (startDateTime <= DateTime.UtcNow) return null;
 
             if (appointment.CurrentCount >= appointment.Capacity)
             {
@@ -41,17 +36,17 @@ namespace SCMS.BL.BLClasses
             }
 
             bool alreadyBooked = _context.AppointmentBookings
-                .Any(b => b.AppointmentId == appointmentId && b.PatientId == patientId);
+                .Any(b => b.AppointmentId == appointmentId && b.PatientId == patientId && b.Status == "Booked");
 
-            if (alreadyBooked)
-                return null;
+            if (alreadyBooked) return null;
 
             var booking = new AppointmentBooking
             {
                 AppointmentId = appointmentId,
                 PatientId = patientId,
                 OrderNumber = appointment.CurrentCount + 1,
-                Status = "Booked"
+                Status = "Booked",
+                CreatedAt = DateTime.UtcNow
             };
 
             appointment.CurrentCount++;
@@ -70,11 +65,8 @@ namespace SCMS.BL.BLClasses
                 .Include(b => b.Appointment)
                 .FirstOrDefault(b => b.BookingId == bookingId && b.PatientId == patientId);
 
-            if (booking == null)
-                return false;
-
-            if (booking.Status != "Booked")
-                return false;
+            if (booking == null) return false;
+            if (booking.Status != "Booked") return false;
 
             var appointment = booking.Appointment;
 
@@ -85,9 +77,7 @@ namespace SCMS.BL.BLClasses
                 appointment.Status = "Available";
 
             booking.Status = "Cancelled";
-
             _context.SaveChanges();
-
             return true;
         }
 
@@ -105,7 +95,6 @@ namespace SCMS.BL.BLClasses
         {
             return _context.AppointmentBookings
                 .Include(b => b.Patient)
-                    .ThenInclude(p => p.User)
                 .Where(b => b.AppointmentId == appointmentId)
                 .OrderBy(b => b.OrderNumber)
                 .ToList();

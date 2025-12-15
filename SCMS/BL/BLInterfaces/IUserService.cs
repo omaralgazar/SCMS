@@ -12,7 +12,6 @@ namespace SCMS.BL.BLInterfaces
         bool ActivateUser(int userId);
         bool DeactivateUser(int userId);
 
-        bool ChangeRole(int userId, string newRole);
         bool UpdateBasicInfo(int userId, string fullName, string phone);
     }
 }

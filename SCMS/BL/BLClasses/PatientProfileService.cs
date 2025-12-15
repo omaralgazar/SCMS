@@ -17,31 +17,28 @@ namespace SCMS.BL.BLClasses
 
         public PatientProfileVm? GetPatientProfileForDoctor(int patientId, int doctorId)
         {
-            // 1) نتأكد إن الدكتور فعلاً له علاقة بالمريض (في بينهم حجز)
             bool hasRelation = _context.AppointmentBookings
                 .Include(b => b.Appointment)
-                .Any(b => b.PatientId == patientId &&
-                          b.Appointment.DoctorId == doctorId);
+                .Any(b => b.PatientId == patientId && b.Appointment.DoctorId == doctorId);
 
             if (!hasRelation)
-                return null;   // الدكتور ده مالوش حق يشوف البروفايل
+                return null;
 
-            // 2) نجيب بيانات المريض مع الـ MedicalRecords
             var patient = _context.Patients
-                .Include(p => p.User)
                 .Include(p => p.MedicalRecords)
                     .ThenInclude(r => r.RelatedPrescription)
                 .Include(p => p.MedicalRecords)
                     .ThenInclude(r => r.RadiologyResult)
-                .FirstOrDefault(p => p.PatientId == patientId);
+                        .ThenInclude(rr => rr.Request)
+                .FirstOrDefault(p => p.UserId == patientId);
 
             if (patient == null)
                 return null;
 
-            var vm = new PatientProfileVm
+            return new PatientProfileVm
             {
-                PatientId = patient.PatientId,
-                FullName = patient.User.FullName,
+                PatientId = patient.UserId,
+                FullName = patient.FullName,
                 Age = patient.Age,
                 Gender = patient.Gender,
                 Address = patient.Address,
@@ -55,13 +52,11 @@ namespace SCMS.BL.BLClasses
                         Description = r.Description,
                         Diagnosis = r.RelatedPrescription?.Diagnosis,
                         Treatment = r.RelatedPrescription?.Treatment,
-                        RadiologyTestName = r.RadiologyResult?.Request.TestName,
+                        RadiologyTestName = r.RadiologyResult?.Request?.TestName,
                         RadiologyStatus = r.RadiologyResult?.Status
                     })
                     .ToList()
             };
-
-            return vm;
         }
     }
 }

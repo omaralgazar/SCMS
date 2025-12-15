@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SCMS.Models;
 using SCMS.ViewModels;
-using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace SCMS.Controllers
 {
@@ -14,6 +16,7 @@ namespace SCMS.Controllers
             _context = context;
         }
 
+        // ================= REGISTER =================
         [HttpGet]
         public IActionResult Register()
         {
@@ -26,24 +29,39 @@ namespace SCMS.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
-            var user = new User
+            if (await _context.Users.AnyAsync(u => u.Username == vm.Username))
             {
-                FullName = vm.FullName,
-                Email = vm.Email,
-                Phone = vm.Phone,
-                Username = vm.Username,
-                PasswordHash = vm.Password, // TODO: اعملي Hash حقيقي
-                Role = vm.Role,
-                IsActive = true
+                ModelState.AddModelError("", "Username already exists");
+                return View(vm);
+            }
+
+            string passwordHash = HashPassword(vm.Password);
+
+            // Create user based on type
+            SCMS.Models.User user = vm.UserType switch
+            {
+                "Patient" => new Patient(),
+                "Doctor" => new Doctor(),
+                "Receptionist" => new Receptionist(),
+                "Admin" => new Admin(),
+                _ => new SCMS.Models.User()
             };
+
+
+            user.FullName = vm.FullName;
+            user.Email = vm.Email;
+            user.Phone = vm.Phone;
+            user.Username = vm.Username;
+            user.PasswordHash = passwordHash;
+            user.IsActive = true;
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // TODO: ممكن تعملي SignIn هنا
-            return RedirectToAction("Login");
+            return RedirectToAction(nameof(Login));
         }
 
+        // ================= LOGIN =================
         [HttpGet]
         public IActionResult Login()
         {
@@ -58,21 +76,25 @@ namespace SCMS.Controllers
 
             var user = await _context.Users
                 .FirstOrDefaultAsync(u =>
-                    (u.Email == vm.EmailOrUsername || u.Username == vm.EmailOrUsername) &&
-                    u.PasswordHash == vm.Password && // TODO: Hash check
-                    u.Role == vm.Role &&
-                    u.IsActive);
+                    (u.Email == vm.EmailOrUsername || u.Username == vm.EmailOrUsername)
+                    && u.IsActive);
 
-            if (user == null)
+            if (user == null || !VerifyPassword(vm.Password, user.PasswordHash))
             {
                 ModelState.AddModelError("", "Invalid credentials");
                 return View(vm);
             }
 
-            // TODO: اعملي Cookie / Claims / Session على حسب مشروعك
-            // مؤقتًا نوجّه المستخدم على حسب ال Role:
+            var discriminator = _context.Entry(user)
+                .Property("Discriminator")
+                .CurrentValue?.ToString() ?? "User";
 
-            return user.Role switch
+            // Save session
+            HttpContext.Session.SetString("UserId", user.UserId.ToString());
+            HttpContext.Session.SetString("UserType", discriminator);
+
+            // Redirect based on user type
+            return discriminator switch
             {
                 "Admin" => RedirectToAction("Dashboard", "Admin"),
                 "Doctor" => RedirectToAction("Dashboard", "Doctor"),
@@ -83,44 +105,124 @@ namespace SCMS.Controllers
             };
         }
 
+        // ================= LOGOUT =================
         public IActionResult Logout()
         {
-            // TODO: امسحي الـ Cookies / Session
-            return RedirectToAction("Login");
+            HttpContext.Session.Clear();
+            return RedirectToAction(nameof(Login));
         }
 
-        [HttpGet]
-        public IActionResult ForgotPassword()
+        // ================= PASSWORD HASHING =================
+        private string HashPassword(string password)
         {
-            // ممكن تعملي ViewModel لو حابة
-            return View();
+            byte[] salt = RandomNumberGenerator.GetBytes(16);
+
+            string hash = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password,
+                salt,
+                KeyDerivationPrf.HMACSHA256,
+                100000,
+                32));
+
+            return $"{Convert.ToBase64String(salt)}.{hash}";
         }
 
-        [HttpPost]
-        public IActionResult ForgotPassword(string email)
+        private bool VerifyPassword(string password, string hash)
         {
-            // TODO: ابعتي إيميل Reset لو حابة
-            ViewBag.Message = "If this email exists, a reset link will be sent.";
-            return View();
+            var parts = hash.Split('.');
+            if (parts.Length != 2) return false;
+
+            var salt = Convert.FromBase64String(parts[0]);
+            var stored = parts[1];
+
+            var computed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
+                password,
+                salt,
+                KeyDerivationPrf.HMACSHA256,
+                100000,
+                32));
+
+            return computed == stored;
         }
 
-        [HttpGet]
-        public IActionResult ResetPassword(string token)
-        {
-            // TODO: تحققي من الـ token
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult ResetPassword(string token, string newPassword)
-        {
-            // TODO: غيّري الباسورد
-            return RedirectToAction("Login");
-        }
-
+        // ================= ACCESS DENIED =================
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        // ================= PROTECTED ADMIN PAGE EXAMPLE =================
+        public IActionResult SomeAdminPage()
+        {
+            var userType = HttpContext.Session.GetString("UserType");
+            if (userType != "Admin")
+            {
+                return RedirectToAction("AccessDenied", "Account");
+            }
+            return View();
+        }
+
+        // ================= FORGOT PASSWORD =================
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult ForgotPassword(string EmailOrUsername)
+        {
+            if (string.IsNullOrEmpty(EmailOrUsername))
+            {
+                TempData["Message"] = "Please enter your email or username.";
+                return View();
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Email == EmailOrUsername || u.Username == EmailOrUsername);
+
+            if (user == null)
+            {
+                TempData["Message"] = "User not found.";
+                return View();
+            }
+
+            // Redirect directly to ResetPassword for simplicity
+            return RedirectToAction("ResetPassword", new { userId = user.UserId });
+        }
+
+        // ================= RESET PASSWORD =================
+        [HttpGet]
+        public IActionResult ResetPassword(int userId)
+        {
+            var vm = new ResetPasswordVm { UserId = userId };
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordVm vm)
+        {
+            if (!ModelState.IsValid)
+                return View(vm);
+
+            if (vm.NewPassword != vm.ConfirmPassword)
+            {
+                ModelState.AddModelError("", "Passwords do not match");
+                return View(vm);
+            }
+
+            var user = await _context.Users.FindAsync(vm.UserId);
+            if (user == null)
+            {
+                ModelState.AddModelError("", "User not found");
+                return View(vm);
+            }
+
+            user.PasswordHash = HashPassword(vm.NewPassword);
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
+            TempData["Message"] = "Password reset successfully!";
+            return RedirectToAction("Login");
         }
     }
 }

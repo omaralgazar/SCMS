@@ -25,7 +25,7 @@ namespace SCMS.BL.BLClasses
 
         public bool Update(Doctor doctor)
         {
-            if (!_context.Doctors.Any(d => d.DoctorId == doctor.DoctorId))
+            if (!_context.Doctors.Any(d => d.UserId == doctor.UserId))
                 return false;
 
             _context.Doctors.Update(doctor);
@@ -35,9 +35,8 @@ namespace SCMS.BL.BLClasses
 
         public bool Delete(int doctorId)
         {
-            var doctor = _context.Doctors.FirstOrDefault(d => d.DoctorId == doctorId);
-            if (doctor == null)
-                return false;
+            var doctor = _context.Doctors.FirstOrDefault(d => d.UserId == doctorId);
+            if (doctor == null) return false;
 
             bool hasRelations =
                 _context.Appointments.Any(a => a.DoctorId == doctorId) ||
@@ -45,8 +44,7 @@ namespace SCMS.BL.BLClasses
                 _context.Feedbacks.Any(f => f.DoctorId == doctorId) ||
                 _context.RadiologyRequests.Any(r => r.DoctorId == doctorId);
 
-            if (hasRelations)
-                return false;
+            if (hasRelations) return false;
 
             _context.Doctors.Remove(doctor);
             _context.SaveChanges();
@@ -55,39 +53,27 @@ namespace SCMS.BL.BLClasses
 
         public Doctor? GetById(int doctorId)
         {
-            return _context.Doctors
-                .Include(d => d.Staff)
-                    .ThenInclude(s => s.User)
-                .FirstOrDefault(d => d.DoctorId == doctorId);
+            return _context.Doctors.FirstOrDefault(d => d.UserId == doctorId);
         }
 
         public List<Doctor> GetAll()
         {
-            return _context.Doctors
-                .Include(d => d.Staff)
-                    .ThenInclude(s => s.User)
-                .ToList();
+            return _context.Doctors.ToList();
         }
 
         public List<Doctor> GetBySpecialization(string specialization)
         {
             return _context.Doctors
-                .Include(d => d.Staff)
-                    .ThenInclude(s => s.User)
                 .Where(d => d.Specialization == specialization)
                 .ToList();
         }
 
         public List<Appointment> GetAppointmentsForDoctor(int doctorId, DateTime? from = null, DateTime? to = null)
         {
-            var query = _context.Appointments
-                .Where(a => a.DoctorId == doctorId);
+            var query = _context.Appointments.Where(a => a.DoctorId == doctorId);
 
-            if (from.HasValue)
-                query = query.Where(a => a.AppointmentDate >= from.Value.Date);
-
-            if (to.HasValue)
-                query = query.Where(a => a.AppointmentDate <= to.Value.Date);
+            if (from.HasValue) query = query.Where(a => a.AppointmentDate >= from.Value.Date);
+            if (to.HasValue) query = query.Where(a => a.AppointmentDate <= to.Value.Date);
 
             return query
                 .Include(a => a.Bookings)
@@ -99,9 +85,7 @@ namespace SCMS.BL.BLClasses
         public double GetAverageRate(int doctorId)
         {
             var q = _context.Feedbacks.Where(f => f.DoctorId == doctorId);
-            if (!q.Any())
-                return 0;
-
+            if (!q.Any()) return 0;
             return q.Average(f => f.Rate);
         }
     }

@@ -32,8 +32,7 @@ namespace SCMS.BL.BLClasses
         public bool ActivateUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user == null)
-                return false;
+            if (user == null) return false;
 
             user.IsActive = true;
             _context.SaveChanges();
@@ -43,21 +42,9 @@ namespace SCMS.BL.BLClasses
         public bool DeactivateUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user == null)
-                return false;
+            if (user == null) return false;
 
             user.IsActive = false;
-            _context.SaveChanges();
-            return true;
-        }
-
-        public bool ChangeRole(int userId, string newRole)
-        {
-            var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user == null)
-                return false;
-
-            user.Role = newRole;
             _context.SaveChanges();
             return true;
         }
@@ -65,8 +52,7 @@ namespace SCMS.BL.BLClasses
         public bool UpdateBasicInfo(int userId, string fullName, string phone)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user == null)
-                return false;
+            if (user == null) return false;
 
             user.FullName = fullName;
             user.Phone = phone;

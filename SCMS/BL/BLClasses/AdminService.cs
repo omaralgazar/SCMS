@@ -1,10 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using SCMS.BL.BLInterfaces;
 using SCMS.Models;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace SCMS.BL
+namespace SCMS.BL.BLClasses
 {
     public class AdminService : IAdminService
     {
@@ -24,11 +24,8 @@ namespace SCMS.BL
 
         public bool UpdateAppointmentSlot(Appointment appointment)
         {
-            var existing = _context.Appointments
-                .FirstOrDefault(a => a.AppointmentId == appointment.AppointmentId);
-
-            if (existing == null)
-                return false;
+            var existing = _context.Appointments.FirstOrDefault(a => a.AppointmentId == appointment.AppointmentId);
+            if (existing == null) return false;
 
             _context.Entry(existing).CurrentValues.SetValues(appointment);
             _context.SaveChanges();
@@ -41,11 +38,8 @@ namespace SCMS.BL
                 .Include(a => a.Bookings)
                 .FirstOrDefault(a => a.AppointmentId == appointmentId);
 
-            if (slot == null)
-                return false;
-
-            if (slot.Bookings.Any())
-                return false;
+            if (slot == null) return false;
+            if (slot.Bookings.Any()) return false;
 
             _context.Appointments.Remove(slot);
             _context.SaveChanges();
@@ -55,8 +49,7 @@ namespace SCMS.BL
         public bool ActivateUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user == null)
-                return false;
+            if (user == null) return false;
 
             user.IsActive = true;
             _context.SaveChanges();
@@ -66,8 +59,7 @@ namespace SCMS.BL
         public bool DeactivateUser(int userId)
         {
             var user = _context.Users.FirstOrDefault(u => u.UserId == userId);
-            if (user == null)
-                return false;
+            if (user == null) return false;
 
             user.IsActive = false;
             _context.SaveChanges();
@@ -78,7 +70,7 @@ namespace SCMS.BL
         {
             return _context.Invoices
                 .Include(i => i.AppointmentBooking)
-                .ThenInclude(b => b.Appointment)
+                    .ThenInclude(b => b.Appointment)
                 .OrderByDescending(i => i.CreatedAt)
                 .ToList();
         }

@@ -1,5 +1,43 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
+﻿@model SCMS.ViewModels.FeedbackFormVm
+
+<h2>Give Feedback to Doctor</h2>
+
+<form asp-action="SubmitFeedback" method="post">
+
+    <!-- DoctorId (Hidden) -->
+    <input type="hidden" asp-for="DoctorId" />
+
+    <!-- Rate -->
+    <div class="form-group">
+        <label asp-for="Rate">Rate (1 to 5)</label>
+        <select asp-for="Rate" class="form-control">
+            <option value="">-- Select Rate --</option>
+            <option value="1">1 ⭐</option>
+            <option value="2">2 ⭐⭐</option>
+            <option value="3">3 ⭐⭐⭐</option>
+            <option value="4">4 ⭐⭐⭐⭐</option>
+            <option value="5">5 ⭐⭐⭐⭐⭐</option>
+        </select>
+        <span asp-validation-for="Rate" class="text-danger"></span>
+    </div>
+
+    <!-- Feedback Text -->
+    <div class="form-group mt-3">
+        <label asp-for="FeedbackText">Your Feedback</label>
+        <textarea asp-for="FeedbackText"
+                  class="form-control"
+                  rows="4"
+                  placeholder="Write your feedback..."></textarea>
+        <span asp-validation-for="FeedbackText" class="text-danger"></span>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary mt-4">
+        Submit Feedback
+    </button>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }

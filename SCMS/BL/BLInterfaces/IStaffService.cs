@@ -10,7 +10,6 @@ namespace SCMS.BL.BLInterfaces
         bool Delete(int staffId);
 
         Staff? GetById(int staffId);
-        Staff? GetByUserId(int userId);
         List<Staff> GetAll();
         List<Staff> GetByDepartment(string departmentName);
     }

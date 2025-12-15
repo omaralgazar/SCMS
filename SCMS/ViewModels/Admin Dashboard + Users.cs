@@ -8,7 +8,8 @@ namespace SCMS.ViewModels
         public int UserId { get; set; }
         public string FullName { get; set; } = null!;
         public string Email { get; set; } = null!;
-        public string Role { get; set; } = null!;
+        public string UserType { get; set; } = null!;
+        public string Phone { get; set; } = null!;
         public DateTime DateAdded { get; set; }
     }
 
@@ -21,7 +22,6 @@ namespace SCMS.ViewModels
         public int TotalPatients { get; set; }
         public int TodayAppointmentsCount { get; set; }
 
-        public IEnumerable<UserSummaryVm> RecentUsers { get; set; }
-            = new List<UserSummaryVm>();
+        public IEnumerable<UserSummaryVm> RecentUsers { get; set; } = new List<UserSummaryVm>();
     }
 }

@@ -5,27 +5,26 @@ namespace SCMS.ViewModels
 {
     public class FeedbackFormVm
     {
-        [Required]
-        public string Name { get; set; } = null!;
-
-        [Required, EmailAddress]
-        public string Email { get; set; } = null!;
-
-        [Range(1, 5)]
+        [Range(1, 5, ErrorMessage = "Rate must be between 1 and 5")]
         public int Rate { get; set; }
 
+        [MaxLength(1000)]
         public string? FeedbackText { get; set; }
 
-        public int? DoctorId { get; set; }   // اختياري لو عايزة تربطيها بدكتور
+        public int DoctorId { get; set; }
     }
 
     public class FeedbackItemVm
     {
         public int FeedbackId { get; set; }
-        public string Name { get; set; } = null!;
-        public string JobTitle { get; set; } = "";
+
+        public string PatientName { get; set; } = null!;
+
         public int Rate { get; set; }
-        public string FeedbackText { get; set; } = null!;
+
+        public string FeedbackText { get; set; } = "";
+
+        public DateTime CreatedAt { get; set; }
     }
 
     public class FeedbackListVm

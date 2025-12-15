@@ -11,11 +11,9 @@ namespace SCMS.Models
         public int ResultId { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Request))]
         public int RequestId { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Radiologist))]
         public int RadiologistId { get; set; }
 
         public string? ImagePath { get; set; }
@@ -27,7 +25,10 @@ namespace SCMS.Models
 
         public DateTime ResultDate { get; set; } = DateTime.UtcNow;
 
+        [ForeignKey(nameof(RequestId))]
         public RadiologyRequest Request { get; set; } = null!;
+
+        [ForeignKey(nameof(RadiologistId))]
         public Radiologist Radiologist { get; set; } = null!;
 
         public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();

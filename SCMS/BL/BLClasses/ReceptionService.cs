@@ -22,16 +22,11 @@ namespace SCMS.BL.BLClasses
                 .Include(a => a.Bookings)
                 .FirstOrDefault(a => a.AppointmentId == appointmentId);
 
-            if (appointment == null)
-                return null;
+            if (appointment == null) return null;
+            if (appointment.Status != "Available") return null;
 
-            if (appointment.Status != "Available")
-                return null;
-
-            var now = DateTime.UtcNow;
             var startDateTime = appointment.AppointmentDate.Date + appointment.StartTime;
-            if (startDateTime <= now)
-                return null;
+            if (startDateTime <= DateTime.UtcNow) return null;
 
             if (appointment.CurrentCount >= appointment.Capacity)
             {
@@ -41,17 +36,17 @@ namespace SCMS.BL.BLClasses
             }
 
             bool alreadyBooked = _context.AppointmentBookings
-                .Any(b => b.AppointmentId == appointmentId && b.PatientId == patientId);
+                .Any(b => b.AppointmentId == appointmentId && b.PatientId == patientId && b.Status == "Booked");
 
-            if (alreadyBooked)
-                return null;
+            if (alreadyBooked) return null;
 
             var booking = new AppointmentBooking
             {
                 AppointmentId = appointmentId,
                 PatientId = patientId,
                 OrderNumber = appointment.CurrentCount + 1,
-                Status = "Booked"
+                Status = "Booked",
+                CreatedAt = DateTime.UtcNow
             };
 
             appointment.CurrentCount++;
@@ -60,7 +55,6 @@ namespace SCMS.BL.BLClasses
 
             _context.AppointmentBookings.Add(booking);
             _context.SaveChanges();
-
             return booking;
         }
 
@@ -70,11 +64,8 @@ namespace SCMS.BL.BLClasses
                 .Include(b => b.Appointment)
                 .FirstOrDefault(b => b.BookingId == bookingId);
 
-            if (booking == null)
-                return false;
-
-            if (booking.Status == "Cancelled" || booking.Status == "NoShow")
-                return false;
+            if (booking == null) return false;
+            if (booking.Status == "Cancelled" || booking.Status == "NoShow") return false;
 
             var appointment = booking.Appointment;
 
@@ -85,21 +76,15 @@ namespace SCMS.BL.BLClasses
                 appointment.Status = "Available";
 
             booking.Status = "Cancelled";
-
             _context.SaveChanges();
             return true;
         }
 
         public bool MarkArrived(int bookingId)
         {
-            var booking = _context.AppointmentBookings
-                .FirstOrDefault(b => b.BookingId == bookingId);
-
-            if (booking == null)
-                return false;
-
-            if (booking.Status != "Booked")
-                return false;
+            var booking = _context.AppointmentBookings.FirstOrDefault(b => b.BookingId == bookingId);
+            if (booking == null) return false;
+            if (booking.Status != "Booked") return false;
 
             booking.Status = "Arrived";
             _context.SaveChanges();
@@ -108,14 +93,9 @@ namespace SCMS.BL.BLClasses
 
         public bool MarkNoShow(int bookingId)
         {
-            var booking = _context.AppointmentBookings
-                .FirstOrDefault(b => b.BookingId == bookingId);
-
-            if (booking == null)
-                return false;
-
-            if (booking.Status != "Booked")
-                return false;
+            var booking = _context.AppointmentBookings.FirstOrDefault(b => b.BookingId == bookingId);
+            if (booking == null) return false;
+            if (booking.Status != "Booked") return false;
 
             booking.Status = "NoShow";
             _context.SaveChanges();
@@ -129,7 +109,6 @@ namespace SCMS.BL.BLClasses
             return _context.AppointmentBookings
                 .Include(b => b.Appointment)
                 .Include(b => b.Patient)
-                    .ThenInclude(p => p.User)
                 .Where(b => b.Appointment.DoctorId == doctorId &&
                             b.Appointment.AppointmentDate == today)
                 .OrderBy(b => b.Appointment.StartTime)

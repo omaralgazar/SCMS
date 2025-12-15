@@ -14,10 +14,24 @@ namespace SCMS.Controllers
             _context = context;
         }
 
+        private int CurrentUserId()
+        {
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            return int.TryParse(userIdStr, out var id) ? id : 0;
+        }
+
+        private UserType CurrentUserType()
+        {
+            var t = HttpContext.Session.GetInt32("UserType");
+            return t.HasValue ? (UserType)t.Value : UserType.User;
+        }
+
         public async Task<IActionResult> Index()
         {
             var feedbacks = await _context.Feedbacks
-                .Include(f => f.Patient).ThenInclude(p => p.User)
+                .Include(f => f.Patient)
+                .Include(f => f.Doctor)
+                .OrderByDescending(f => f.CreatedAt)
                 .ToListAsync();
 
             var vm = new FeedbackListVm
@@ -25,10 +39,10 @@ namespace SCMS.Controllers
                 Items = feedbacks.Select(f => new FeedbackItemVm
                 {
                     FeedbackId = f.FeedbackId,
-                    Name = f.Patient.User.FullName,
-                    JobTitle = "", // لو عندك حقل وظيفه ممكن تضيفيه
+                    PatientName = f.Patient.FullName,
                     Rate = f.Rate,
-                    FeedbackText = f.FeedbackText ?? ""
+                    FeedbackText = f.FeedbackText ?? "",
+                    CreatedAt = f.CreatedAt
                 }).ToList()
             };
 
@@ -36,36 +50,52 @@ namespace SCMS.Controllers
         }
 
         [HttpGet]
-        public IActionResult Create(int? doctorId)
+        public IActionResult Create(int doctorId)
         {
-            var vm = new FeedbackFormVm
-            {
-                DoctorId = doctorId
-            };
-            return View(vm);
+            return View(new FeedbackFormVm { DoctorId = doctorId });
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(FeedbackFormVm vm)
         {
             if (!ModelState.IsValid)
                 return View(vm);
 
-            // TODO: هات PatientId الحقيقي من المستخدم الحالي
-            var patient = await _context.Patients.FirstOrDefaultAsync();
-            if (patient == null)
+            var userId = CurrentUserId();
+            if (userId == 0)
+                return RedirectToAction("Login", "Account");
+
+            if (CurrentUserType() != UserType.Patient)
+                return Forbid();
+
+            var patientExists = await _context.Set<Patient>().AnyAsync(p => p.UserId == userId);
+            if (!patientExists)
             {
-                ModelState.AddModelError("", "No patient found to attach feedback.");
+                ModelState.AddModelError("", "هذا المستخدم ليس Patient.");
+                return View(vm);
+            }
+
+            if (vm.DoctorId <= 0)
+            {
+                ModelState.AddModelError("", "DoctorId غير صحيح.");
+                return View(vm);
+            }
+
+            var doctorExists = await _context.Set<Doctor>().AnyAsync(d => d.UserId == vm.DoctorId);
+            if (!doctorExists)
+            {
+                ModelState.AddModelError("", "Doctor غير موجود.");
                 return View(vm);
             }
 
             var feedback = new Feedback
             {
-                PatientId = patient.PatientId,
-                DoctorId = vm.DoctorId ?? 1, // TODO
+                PatientId = userId,
+                DoctorId = vm.DoctorId,
                 Rate = vm.Rate,
                 FeedbackText = vm.FeedbackText,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Feedbacks.Add(feedback);

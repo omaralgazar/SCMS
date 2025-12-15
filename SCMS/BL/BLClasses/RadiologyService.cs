@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using SCMS.BL.BLInterfaces;
@@ -29,6 +28,7 @@ namespace SCMS.BL.BLClasses
                 .Include(r => r.Patient)
                 .Include(r => r.Doctor)
                 .Include(r => r.Prescription)
+                .Include(r => r.Radiologist)
                 .FirstOrDefault(r => r.RequestId == id);
         }
 
@@ -50,30 +50,13 @@ namespace SCMS.BL.BLClasses
 
         public RadiologyResult AddResult(RadiologyResult result)
         {
-            var request = _context.RadiologyRequests
-                .FirstOrDefault(r => r.RequestId == result.RequestId);
-
-            if (request == null)
-                throw new InvalidOperationException("Request not found");
-
             _context.RadiologyResults.Add(result);
 
-            request.Status = "Completed";
-            result.Status = "Completed";
+            var request = _context.RadiologyRequests.FirstOrDefault(r => r.RequestId == result.RequestId);
+            if (request != null)
+                request.Status = "Completed";
 
             _context.SaveChanges();
-
-            var record = new MedicalRecord
-            {
-                PatientId = request.PatientId,
-                RadiologyResultId = result.ResultId,
-                Description = "Radiology result added",
-                RecordDate = DateTime.UtcNow
-            };
-
-            _context.MedicalRecords.Add(record);
-            _context.SaveChanges();
-
             return result;
         }
 
@@ -82,6 +65,7 @@ namespace SCMS.BL.BLClasses
             return _context.RadiologyResults
                 .Include(r => r.Request)
                     .ThenInclude(req => req.Patient)
+                .Include(r => r.Radiologist)
                 .FirstOrDefault(r => r.ResultId == id);
         }
 

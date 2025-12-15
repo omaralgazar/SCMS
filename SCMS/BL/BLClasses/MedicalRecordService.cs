@@ -34,11 +34,8 @@ namespace SCMS.BL.BLClasses
 
         public MedicalRecord? AddRecordFromPrescription(int prescriptionId, string? description = null)
         {
-            var prescription = _context.Prescriptions
-                .FirstOrDefault(p => p.PrescriptionId == prescriptionId);
-
-            if (prescription == null)
-                return null;
+            var prescription = _context.Prescriptions.FirstOrDefault(p => p.PrescriptionId == prescriptionId);
+            if (prescription == null) return null;
 
             var record = new MedicalRecord
             {
@@ -59,8 +56,7 @@ namespace SCMS.BL.BLClasses
                 .Include(r => r.Request)
                 .FirstOrDefault(r => r.ResultId == radiologyResultId);
 
-            if (result == null || result.Request == null)
-                return null;
+            if (result?.Request == null) return null;
 
             var record = new MedicalRecord
             {
@@ -80,6 +76,7 @@ namespace SCMS.BL.BLClasses
             return _context.MedicalRecords
                 .Include(r => r.RelatedPrescription)
                 .Include(r => r.RadiologyResult)
+                    .ThenInclude(rr => rr.Request)
                 .FirstOrDefault(r => r.RecordId == recordId);
         }
 
@@ -89,6 +86,7 @@ namespace SCMS.BL.BLClasses
                 .Where(r => r.PatientId == patientId)
                 .Include(r => r.RelatedPrescription)
                 .Include(r => r.RadiologyResult)
+                    .ThenInclude(rr => rr.Request)
                 .OrderByDescending(r => r.RecordDate)
                 .ToList();
         }

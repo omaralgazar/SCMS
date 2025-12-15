@@ -21,14 +21,9 @@ namespace SCMS.BL.BLClasses
                 .Include(b => b.Appointment)
                 .FirstOrDefault(b => b.BookingId == bookingId);
 
-            if (booking == null)
-                return null;
-
-            if (booking.Status != "Booked" && booking.Status != "Arrived")
-                return null;
-
-            if (_context.Invoices.Any(i => i.BookingId == bookingId))
-                return null;
+            if (booking == null) return null;
+            if (_context.Invoices.Any(i => i.BookingId == bookingId)) return null;
+            if (booking.Status != "Booked") return null;
 
             var invoice = new Invoice
             {
@@ -72,12 +67,7 @@ namespace SCMS.BL.BLClasses
         public bool MarkAsPaid(int invoiceId)
         {
             var invoice = _context.Invoices.FirstOrDefault(i => i.InvoiceId == invoiceId);
-
-            if (invoice == null)
-                return false;
-
-            if (invoice.Status == "Paid")
-                return false;
+            if (invoice == null) return false;
 
             invoice.Status = "Paid";
             _context.SaveChanges();

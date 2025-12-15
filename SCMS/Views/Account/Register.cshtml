@@ -1,5 +1,47 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model SCMS.ViewModels.RegisterVm
+
 @{
+    ViewData["Title"] = "Register";
+    Layout = "_Layout";
 }
+
+<div class="container" style="max-width: 500px; margin-top: 60px;">
+    <div class="card" style="padding: 30px;">
+        <h1 style="color: var(--primary); font-size: 28px; text-align:center;">📝 Register</h1>
+        <p style="margin: 15px 0; color: var(--text-muted); text-align:center;">
+            Create a new account to access the Smart Clinic System
+        </p>
+
+        <form asp-action="Register" method="post">
+            <label for="FullName">Full Name</label>
+            <input asp-for="FullName" placeholder="Enter your full name" required />
+
+            <label for="Email">Email</label>
+            <input asp-for="Email" type="email" placeholder="Enter your email" required />
+
+            <label for="Phone">Phone</label>
+            <input asp-for="Phone" type="text" placeholder="Enter your phone number" required />
+
+            <label for="Username">Username</label>
+            <input asp-for="Username" placeholder="Choose a username" required />
+
+            <label for="Password">Password</label>
+            <input asp-for="Password" type="password" placeholder="Enter a password" required />
+
+            <label for="UserType">User Type</label>
+            <select asp-for="UserType" required>
+                <option value="">-- Select User Type --</option>
+                <option value="Patient">Patient</option>
+                <option value="Doctor">Doctor</option>
+                <option value="Receptionist">Receptionist</option>
+                <option value="Admin">Admin</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:20px;">Register</button>
+        </form>
+
+        <div style="margin-top:15px; text-align:center;">
+            <a asp-action="Login" class="btn btn-secondary">Back to Login</a>
+        </div>
+    </div>
+</div>

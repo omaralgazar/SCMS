@@ -19,25 +19,27 @@ namespace SCMS.ViewModels
         [Required, DataType(DataType.Password)]
         public string Password { get; set; } = null!;
 
-        [Required, DataType(DataType.Password), Compare(nameof(Password))]
+        [Required, DataType(DataType.Password)]
+        [Compare(nameof(Password))]
         public string ConfirmPassword { get; set; } = null!;
 
-        // Login as: Patient / Doctor / Receptionist / Admin
+        // Patient / Doctor / Receptionist / Admin
         [Required]
-        public string Role { get; set; } = null!;
+        public string UserType { get; set; } = null!;
     }
 
-    public class LoginVm
-    {
-        [Required]
-        public string EmailOrUsername { get; set; } = null!;
 
-        [Required, DataType(DataType.Password)]
-        public string Password { get; set; } = null!;
+        public class LoginVm
+        {
+            [Required]
+            public string EmailOrUsername { get; set; } = null!;
 
-        [Required]
-        public string Role { get; set; } = null!;   // من الـ dropdown
+            [Required, DataType(DataType.Password)]
+            public string Password { get; set; } = null!;
 
-        public bool RememberMe { get; set; }
-    }
+            public bool RememberMe { get; set; }
+        }
+    
+
 }
+

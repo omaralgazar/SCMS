@@ -24,7 +24,7 @@ namespace SCMS.BL.BLClasses
 
         public bool Update(Staff staff)
         {
-            if (!_context.Staff.Any(s => s.StaffId == staff.StaffId))
+            if (!_context.Staff.Any(s => s.UserId == staff.UserId))
                 return false;
 
             _context.Staff.Update(staff);
@@ -32,50 +32,37 @@ namespace SCMS.BL.BLClasses
             return true;
         }
 
-        public bool Delete(int staffId)
+        public bool Delete(int staffUserId)
         {
-            var staff = _context.Staff.FirstOrDefault(s => s.StaffId == staffId);
-            if (staff == null)
-                return false;
+            var staff = _context.Staff.FirstOrDefault(s => s.UserId == staffUserId);
+            if (staff == null) return false;
 
             bool hasRoles =
-                _context.Doctors.Any(d => d.StaffId == staffId) ||
-                _context.Radiologists.Any(r => r.StaffId == staffId) ||
-                _context.Receptionists.Any(rc => rc.StaffId == staffId);
+                _context.Doctors.Any(d => d.UserId == staffUserId) ||
+                _context.Radiologists.Any(r => r.UserId == staffUserId) ||
+                _context.Receptionists.Any(rc => rc.UserId == staffUserId) ||
+                _context.Users.OfType<Admin>().Any(a => a.UserId == staffUserId);
 
-            if (hasRoles)
-                return false;
+            if (hasRoles) return false;
 
             _context.Staff.Remove(staff);
             _context.SaveChanges();
             return true;
         }
 
-        public Staff? GetById(int staffId)
+        public Staff? GetById(int staffUserId)
         {
-            return _context.Staff
-                .Include(s => s.User)
-                .FirstOrDefault(s => s.StaffId == staffId);
-        }
-
-        public Staff? GetByUserId(int userId)
-        {
-            return _context.Staff
-                .Include(s => s.User)
-                .FirstOrDefault(s => s.UserId == userId);
+            return _context.Staff.FirstOrDefault(s => s.UserId == staffUserId);
         }
 
         public List<Staff> GetAll()
         {
-            return _context.Staff
-                .Include(s => s.User)
-                .ToList();
+            return _context.Staff.ToList();
         }
 
         public List<Staff> GetByDepartment(string departmentName)
         {
             return _context.Staff
-                .Include(s => s.User)
                 .Where(s => s.DepartmentName == departmentName)
                 .ToList();
         }

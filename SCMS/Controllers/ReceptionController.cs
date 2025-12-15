@@ -14,44 +14,65 @@ namespace SCMS.Controllers
             _context = context;
         }
 
+        private int CurrentUserId()
+        {
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            return int.TryParse(userIdStr, out var id) ? id : 0;
+        }
+
+        private UserType CurrentUserType()
+        {
+            var t = HttpContext.Session.GetInt32("UserType");
+            return t.HasValue ? (UserType)t.Value : UserType.User;
+        }
+
         public async Task<IActionResult> Dashboard()
         {
+            var userId = CurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            if (CurrentUserType() != UserType.Receptionist && CurrentUserType() != UserType.Admin)
+                return Forbid();
+
             var today = DateTime.Today;
 
             var todaysAppointments = await _context.Appointments
-                .Include(a => a.Doctor).ThenInclude(d => d.Staff)
-                .Include(a => a.Bookings).ThenInclude(b => b.Patient).ThenInclude(p => p.User)
+                .Include(a => a.Doctor)
+                .Include(a => a.Bookings)
+                    .ThenInclude(b => b.Patient)
                 .Where(a => a.AppointmentDate.Date == today)
+                .ToListAsync();
+
+            var recentPatients = await _context.Set<Patient>()
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(6)
                 .ToListAsync();
 
             var vm = new ReceptionDashboardVm
             {
-                ReceptionistName = User.Identity?.Name ?? "Receptionist",
+                ReceptionistName = "Receptionist",
                 TodaysAppointmentsCount = todaysAppointments.Count,
                 TodaysAppointments = todaysAppointments.Select(a => new AppointmentSummaryVm
                 {
                     AppointmentId = a.AppointmentId,
                     AppointmentDate = a.AppointmentDate,
                     StartTime = a.StartTime,
-                    DoctorName = a.Doctor.Staff.EmployeeName,
-                    PatientName = a.Bookings.FirstOrDefault()?.Patient.User.FullName ?? "-",
+                    DoctorName = a.Doctor.FullName,
+                    PatientName = a.Bookings.FirstOrDefault()?.Patient.FullName ?? "-",
                     Status = a.Status
                 }).ToList(),
-                RecentPatients = await _context.Patients
-                    .Include(p => p.User)
-                    .OrderByDescending(p => p.PatientId)
-                    .Take(6)
-                    .Select(p => new PatientSummaryVm
-                    {
-                        PatientId = p.PatientId,
-                        FullName = p.User.FullName,
-                        Age = p.Age,
-                        Phone = p.User.Phone,
-                        LastVisit = p.MedicalRecords
-                            .OrderByDescending(r => r.RecordDate)
-                            .Select(r => (DateTime?)r.RecordDate)
-                            .FirstOrDefault()
-                    }).ToListAsync()
+                RecentPatients = recentPatients.Select(p => new PatientSummaryVm
+                {
+                    PatientId = p.UserId,
+                    FullName = p.FullName,
+                    Age = p.Age,
+                    Phone = p.Phone,
+                    LastVisit = _context.MedicalRecords
+                        .Where(r => r.PatientId == p.UserId)
+                        .OrderByDescending(r => r.RecordDate)
+                        .Select(r => (DateTime?)r.RecordDate)
+                        .FirstOrDefault()
+                }).ToList()
             };
 
             return View(vm);
@@ -61,21 +82,17 @@ namespace SCMS.Controllers
         {
             const int pageSize = 10;
 
-            var query = _context.Patients
-                .Include(p => p.User)
-                .AsQueryable();
+            var query = _context.Set<Patient>().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(p =>
-                    p.User.FullName.Contains(searchTerm) ||
-                    p.User.Phone.Contains(searchTerm));
+                query = query.Where(p => p.FullName.Contains(searchTerm) || p.Phone.Contains(searchTerm));
             }
 
             var totalCount = await query.CountAsync();
 
             var patients = await query
-                .OrderBy(p => p.User.FullName)
+                .OrderBy(p => p.FullName)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -87,11 +104,12 @@ namespace SCMS.Controllers
                 TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
                 Patients = patients.Select(p => new PatientSummaryVm
                 {
-                    PatientId = p.PatientId,
-                    FullName = p.User.FullName,
+                    PatientId = p.UserId,
+                    FullName = p.FullName,
                     Age = p.Age,
-                    Phone = p.User.Phone,
-                    LastVisit = p.MedicalRecords
+                    Phone = p.Phone,
+                    LastVisit = _context.MedicalRecords
+                        .Where(r => r.PatientId == p.UserId)
                         .OrderByDescending(r => r.RecordDate)
                         .Select(r => (DateTime?)r.RecordDate)
                         .FirstOrDefault()
@@ -103,144 +121,61 @@ namespace SCMS.Controllers
 
         public async Task<IActionResult> PatientDetails(int id)
         {
-            var patient = await _context.Patients
-                .Include(p => p.User)
-                .Include(p => p.MedicalRecords)
-                .FirstOrDefaultAsync(p => p.PatientId == id);
+            var patient = await _context.Set<Patient>()
+                .FirstOrDefaultAsync(p => p.UserId == id);
 
             if (patient == null) return NotFound();
 
+            var records = await _context.MedicalRecords
+                .Include(r => r.RelatedPrescription)
+                .Include(r => r.RadiologyResult)
+                    .ThenInclude(rr => rr.Request)
+                .Where(r => r.PatientId == id)
+                .OrderByDescending(r => r.RecordDate)
+                .ToListAsync();
+
             var header = new PatientHeaderVm
             {
-                PatientId = patient.PatientId,
-                FullName = patient.User.FullName,
+                PatientId = patient.UserId,
+                FullName = patient.FullName,
                 Age = patient.Age,
                 DateOfBirth = patient.DateOfBirth,
-                Phone = patient.User.Phone,
+                Phone = patient.Phone,
                 Address = patient.Address,
                 Allergies = patient.MedicalHistorySummary
             };
 
             var profile = new PatientProfileVm
             {
-                PatientId = patient.PatientId,
-                FullName = patient.User.FullName,
+                PatientId = patient.UserId,
+                FullName = patient.FullName,
                 Age = patient.Age,
                 Gender = patient.Gender,
                 Address = patient.Address,
                 MedicalHistorySummary = patient.MedicalHistorySummary,
-                Records = patient.MedicalRecords
-                    .OrderByDescending(r => r.RecordDate)
-                    .Select(r => new PatientProfileRecordVm
-                    {
-                        RecordId = r.RecordId,
-                        RecordDate = r.RecordDate,
-                        Description = r.Description,
-                        Diagnosis = r.RelatedPrescription?.Diagnosis,
-                        Treatment = r.RelatedPrescription?.Treatment,
-                        RadiologyTestName = r.RadiologyResult?.Request.TestName,
-                        RadiologyStatus = r.RadiologyResult?.Status
-                    }).ToList()
+                Records = records.Select(r => new PatientProfileRecordVm
+                {
+                    RecordId = r.RecordId,
+                    RecordDate = r.RecordDate,
+                    Description = r.Description,
+                    Diagnosis = r.RelatedPrescription?.Diagnosis,
+                    Treatment = r.RelatedPrescription?.Treatment,
+                    RadiologyTestName = r.RadiologyResult?.Request.TestName,
+                    RadiologyStatus = r.RadiologyResult?.Status
+                }).ToList()
             };
 
             ViewBag.PatientHeader = header;
             return View(profile);
         }
 
-        [HttpGet]
-        public IActionResult CreatePatient()
-        {
-            return View(new PatientFormVm());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreatePatient(PatientFormVm vm)
-        {
-            if (!ModelState.IsValid)
-                return View(vm);
-
-            var user = new User
-            {
-                FullName = vm.FullName,
-                Phone = vm.Phone,
-                Email = vm.Email,
-                Username = vm.Email,
-                PasswordHash = "123456", // TODO: password & hash
-                Role = "Patient",
-                IsActive = true
-            };
-
-            var patient = new Patient
-            {
-                User = user,
-                Gender = vm.Gender,
-                DateOfBirth = vm.DateOfBirth,
-                Address = vm.Address,
-                MedicalHistorySummary = vm.MedicalHistorySummary,
-                Age = (int)((DateTime.Today - vm.DateOfBirth).TotalDays / 365.25)
-            };
-
-            _context.Patients.Add(patient);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Patients));
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> EditPatient(int id)
-        {
-            var patient = await _context.Patients
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.PatientId == id);
-
-            if (patient == null) return NotFound();
-
-            var vm = new PatientFormVm
-            {
-                PatientId = patient.PatientId,
-                FullName = patient.User.FullName,
-                Email = patient.User.Email,
-                Phone = patient.User.Phone,
-                Gender = patient.Gender,
-                DateOfBirth = patient.DateOfBirth,
-                Address = patient.Address,
-                MedicalHistorySummary = patient.MedicalHistorySummary
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> EditPatient(PatientFormVm vm)
-        {
-            if (!ModelState.IsValid)
-                return View(vm);
-
-            var patient = await _context.Patients
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.PatientId == vm.PatientId);
-
-            if (patient == null) return NotFound();
-
-            patient.User.FullName = vm.FullName;
-            patient.User.Email = vm.Email;
-            patient.User.Phone = vm.Phone;
-            patient.Gender = vm.Gender;
-            patient.DateOfBirth = vm.DateOfBirth;
-            patient.Address = vm.Address;
-            patient.MedicalHistorySummary = vm.MedicalHistorySummary;
-            patient.Age = (int)((DateTime.Today - vm.DateOfBirth).TotalDays / 365.25);
-
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Patients));
-        }
-
         public async Task<IActionResult> Appointments()
         {
             var appointments = await _context.Appointments
-                .Include(a => a.Doctor).ThenInclude(d => d.Staff)
-                .Include(a => a.Bookings).ThenInclude(b => b.Patient).ThenInclude(p => p.User)
+                .Include(a => a.Doctor)
+                .Include(a => a.Bookings).ThenInclude(b => b.Patient)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
                 .ToListAsync();
 
             var vm = appointments.Select(a => new AppointmentSummaryVm
@@ -248,8 +183,8 @@ namespace SCMS.Controllers
                 AppointmentId = a.AppointmentId,
                 AppointmentDate = a.AppointmentDate,
                 StartTime = a.StartTime,
-                DoctorName = a.Doctor.Staff.EmployeeName,
-                PatientName = a.Bookings.FirstOrDefault()?.Patient.User.FullName ?? "-",
+                DoctorName = a.Doctor.FullName,
+                PatientName = a.Bookings.FirstOrDefault()?.Patient.FullName ?? "-",
                 Status = a.Status
             }).ToList();
 
@@ -259,8 +194,9 @@ namespace SCMS.Controllers
         public async Task<IActionResult> RadiologyRequests()
         {
             var requests = await _context.RadiologyRequests
-                .Include(r => r.Patient).ThenInclude(p => p.User)
-                .Include(r => r.Doctor).ThenInclude(d => d.Staff)
+                .Include(r => r.Patient)
+                .Include(r => r.Doctor)
+                .OrderByDescending(r => r.RequestDate)
                 .ToListAsync();
 
             var vm = new RadiologyRequestListVm
@@ -268,11 +204,11 @@ namespace SCMS.Controllers
                 Requests = requests.Select(r => new RadiologyRequestItemVm
                 {
                     RequestId = r.RequestId,
-                    PatientName = r.Patient.User.FullName,
+                    PatientName = r.Patient.FullName,
                     Age = r.Patient.Age,
-                    Phone = r.Patient.User.Phone,
-                    DayOfRay = r.RequestDate,
-                    RayType = r.TestName,
+                    Phone = r.Patient.Phone,
+                    RequestDate = r.RequestDate,
+                    TestName = r.TestName,
                     Status = r.Status
                 }).ToList()
             };
@@ -283,8 +219,8 @@ namespace SCMS.Controllers
         public async Task<IActionResult> RadiologyRequestDetails(int id)
         {
             var request = await _context.RadiologyRequests
-                .Include(r => r.Patient).ThenInclude(p => p.User)
-                .Include(r => r.Doctor).ThenInclude(d => d.Staff)
+                .Include(r => r.Patient)
+                .Include(r => r.Doctor)
                 .Include(r => r.Result)
                 .FirstOrDefaultAsync(r => r.RequestId == id);
 

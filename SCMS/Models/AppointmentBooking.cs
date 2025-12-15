@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SCMS.Models
@@ -9,11 +10,9 @@ namespace SCMS.Models
         public int BookingId { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Appointment))]
         public int AppointmentId { get; set; }
 
         [Required]
-        [ForeignKey(nameof(Patient))]
         public int PatientId { get; set; }
 
         [Required]
@@ -24,7 +23,10 @@ namespace SCMS.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [ForeignKey(nameof(AppointmentId))]
         public Appointment Appointment { get; set; } = null!;
+
+        [ForeignKey(nameof(PatientId))]
         public Patient Patient { get; set; } = null!;
 
         public Invoice? Invoice { get; set; }
