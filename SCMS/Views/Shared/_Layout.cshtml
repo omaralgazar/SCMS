@@ -106,6 +106,38 @@
                 }
 
                 @* TODO: Doctor Menu / Radiologist Menu / Admin Menu ... *@
+                @if (userType == (int)UserType.Radiologist)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Radiology", "Requests")"
+                           asp-controller="Radiology" asp-action="Requests">
+                            🩻 All Requests
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Radiology", "CreateResult")"
+                           asp-controller="Radiology" asp-action="CreateResult">
+                            ✍️ Add Result
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Radiology", "PatientResults")"
+                           asp-controller="Radiology" asp-action="PatientResults">
+                            👤 Patient Results
+                        </a>
+                    </li>
+
+                  
+                    <li class="nav-item mt-3">
+                        <a class="nav-link @Active("Account", "Profile")"
+                           asp-controller="Account" asp-action="Profile">
+                            ⚙️ My Profile
+                        </a>
+                    </li>
+                }
+
             </ul>
         </aside>
 
