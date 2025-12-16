@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="~/css/clinic.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/SCMS.styles.css" asp-append-version="true" />
 
-    <!-- ✅ Sidebar/Layout CSS -->
+    <!-- Sidebar/Layout CSS -->
     <link rel="stylesheet" href="~/css/sidebar.css" asp-append-version="true" />
 
     @RenderSection("Styles", required: false)
@@ -48,9 +48,50 @@
             <ul class="nav flex-column">
 
                 @* =========================
-                   Receptionist / Admin Menu
+                   Patient Menu
                    ========================= *@
-                @if (userType == (int)UserType.Receptionist || userType == (int)UserType.Admin)
+                @if (userType == (int)UserType.Patient)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Patient", "Dashboard")"
+                           asp-controller="Patient" asp-action="Dashboard" asp-route-id="@userId">
+                            <span>🏠</span> <span>Dashboard</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Patient", "Appointments")"
+                           asp-controller="Patient" asp-action="Appointments" asp-route-id="@userId">
+                            <span>📅</span> <span>Appointments</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Patient", "Prescriptions")"
+                           asp-controller="Patient" asp-action="Prescriptions" asp-route-id="@userId">
+                            <span>💊</span> <span>Prescriptions</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Patient", "MedicalRecords")"
+                           asp-controller="Patient" asp-action="MedicalRecords" asp-route-id="@userId">
+                            <span>📋</span> <span>Medical Records</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @Active("Patient", "Profile")"
+                           asp-controller="Patient" asp-action="Profile" asp-route-id="@userId">
+                            <span>👤</span> <span>Profile</span>
+                        </a>
+                    </li>
+                }
+
+                @* =========================
+                   Receptionist Menu
+                   ========================= *@
+                @if (userType == (int)UserType.Receptionist)
                 {
                     <li class="nav-item">
                         <a class="nav-link @Active("Reception", "Dashboard")"
@@ -81,6 +122,9 @@
                     </li>
                 }
 
+                @* =========================
+                   Admin Menu
+                   ========================= *@
                 @if (userType == (int)UserType.Admin)
                 {
                     <li class="nav-item">
@@ -90,22 +134,10 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link @Active("Patient", "MedicalRecords")"
-                           asp-controller="Patient" asp-action="MedicalRecords" asp-route-id="@userId">
-                            <span>📋</span> <span>Medical Records</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link @Active("Patient", "Profile")"
-                           asp-controller="Patient" asp-action="Profile" asp-route-id="@userId">
-                            <span>👤</span> <span>Profile</span>
-                        </a>
-                    </li>
+                    @* ضيف هنا أي حاجات Admin خاصة بيه *@
                 }
 
-                @* TODO: Doctor Menu / Radiologist Menu / Admin Menu ... *@
+                @* TODO: Doctor Menu / Radiologist Menu ... *@
             </ul>
         </aside>
 
@@ -161,6 +193,5 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-
 </body>
 </html>
