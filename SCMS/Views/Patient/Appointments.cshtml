@@ -3,11 +3,18 @@
 <link rel="stylesheet" href="~/css/clinic.css" />
 
 <div class="patient-appointments">
-    <h2>Appointments</h2>
+    <h2>📅 Appointments</h2>
 
-    <p>Total Appointments: <strong>@Model.AppointmentsCount</strong></p>
+    <div class="card mt-3">
+        <p>
+            <strong>Total Appointments:</strong>
+            <span class="badge badge-primary">
+                @Model.AppointmentsCount
+            </span>
+        </p>
 
-    <p>
-        Appointment details can be viewed and managed by the clinic staff.
-    </p>
+        <p class="text-muted mt-2">
+            Appointment booking and management are handled by the clinic reception.
+        </p>
+    </div>
 </div>

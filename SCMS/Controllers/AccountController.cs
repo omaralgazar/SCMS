@@ -203,7 +203,7 @@ namespace SCMS.Controllers
                 UserType.Doctor => RedirectToAction("Dashboard", "Doctor"),
                 UserType.Receptionist => RedirectToAction("Dashboard", "Reception"),
                 UserType.Radiologist => RedirectToAction("Requests", "Radiology"),
-                UserType.Patient => RedirectToAction("Index", "Home"),
+                UserType.Patient => RedirectToAction("Dashboard", "Patient", new { id = user.UserId }),
                 _ => RedirectToAction("Index", "Home")
             };
         }

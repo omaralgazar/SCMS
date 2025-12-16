@@ -3,16 +3,32 @@
 <link rel="stylesheet" href="~/css/clinic.css" />
 
 <div class="patient-medical-records">
-    <h2>Medical Records</h2>
+    <h2>📋 Medical Records</h2>
 
-    <p>Total Medical Records: <strong>@Model.MedicalRecordsCount</strong></p>
+    <div class="card mt-3">
+        <p>
+            <strong>Total Medical Records:</strong>
+            <span class="badge badge-success">
+                @Model.MedicalRecordsCount
+            </span>
+        </p>
 
-    <p>
-        Detailed medical records, diagnoses, and reports are maintained by doctors.
-    </p>
+        <p class="text-muted mt-2">
+            Medical records include diagnoses, lab results, radiology reports,
+            and clinical notes added by doctors.
+        </p>
+    </div>
 
-    <div class="summary">
-        <h4>Medical History Summary</h4>
-        <p>@Model.MedicalHistorySummary</p>
+    <div class="card mt-3">
+        <h4>🩺 Medical History Summary</h4>
+
+        @if (!string.IsNullOrWhiteSpace(Model.MedicalHistorySummary))
+        {
+            <p>@Model.MedicalHistorySummary</p>
+        }
+        else
+        {
+            <p class="text-muted">No medical history summary available.</p>
+        }
     </div>
 </div>

@@ -1,0 +1,21 @@
+﻿@model SCMS.ViewModels.Patient.PatientVM
+
+<link rel="stylesheet" href="~/css/clinic.css" />
+
+<div class="patient-prescriptions">
+    <h2>💊 Prescriptions</h2>
+
+    <div class="card mt-3">
+        <p>
+            <strong>Total Prescriptions:</strong>
+            <span class="badge badge-warning">
+                @Model.PrescriptionsCount
+            </span>
+        </p>
+
+        <p class="text-muted mt-2">
+            Prescriptions are issued by doctors and include medication details,
+            dosage instructions, and treatment duration.
+        </p>
+    </div>
+</div>

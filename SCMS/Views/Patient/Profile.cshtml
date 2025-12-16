@@ -1,34 +1,77 @@
 ﻿@model SCMS.ViewModels.Patient.PatientVM
 
-<link rel="stylesheet" href="~/css/clinic.css" />
-
 <div class="patient-profile">
-    <h2>Patient Profile</h2>
 
-    <table class="profile-table">
-        <tr>
-            <td><strong>Name</strong></td>
-            <td>@Model.FullName</td>
-        </tr>
-        <tr>
-            <td><strong>Gender</strong></td>
-            <td>@Model.Gender</td>
-        </tr>
-        <tr>
-            <td><strong>Age</strong></td>
-            <td>@Model.Age</td>
-        </tr>
-        <tr>
-            <td><strong>Date of Birth</strong></td>
-            <td>@Model.DateOfBirth.ToShortDateString()</td>
-        </tr>
-        <tr>
-            <td><strong>Address</strong></td>
-            <td>@Model.Address</td>
-        </tr>
-        <tr>
-            <td><strong>Medical History</strong></td>
-            <td>@Model.MedicalHistorySummary</td>
-        </tr>
-    </table>
+    <div class="profile-header">
+        <div>
+            <h2 class="mb-1">👤 Patient Profile</h2>
+            <p class="profile-sub">
+                Basic information & medical summary
+            </p>
+        </div>
+
+        <a asp-controller="Patient"
+           asp-action="Dashboard"
+           asp-route-id="@Model.UserId"
+           class="btn btn-outline profile-back">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <div class="profile-grid">
+
+        <!-- Info Card -->
+        <div class="card profile-card">
+            <div class="soft-header">Personal Info</div>
+
+            <div class="profile-rows">
+                <div class="row-item">
+                    <span class="k">Name</span>
+                    <span class="v">@Model.FullName</span>
+                </div>
+
+                <div class="row-item">
+                    <span class="k">Gender</span>
+                    <span class="v">@Model.Gender</span>
+                </div>
+
+                <div class="row-item">
+                    <span class="k">Age</span>
+                    <span class="v">@Model.Age</span>
+                </div>
+
+                <div class="row-item">
+                    <span class="k">Date of Birth</span>
+                    <span class="v">@Model.DateOfBirth.ToString("dd MMM yyyy")</span>
+                </div>
+
+                <div class="row-item">
+                    <span class="k">Address</span>
+                    <span class="v">
+                        @(!string.IsNullOrWhiteSpace(Model.Address) ? Model.Address : "N/A")
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Card -->
+        <div class="card profile-card">
+            <div class="soft-header">Medical History</div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.MedicalHistorySummary))
+            {
+                <p class="profile-summary">@Model.MedicalHistorySummary</p>
+            }
+            else
+            {
+                <p class="profile-empty">No medical history summary available.</p>
+            }
+
+            <div class="profile-hints">
+                <span class="badge badge-success">Records: @Model.MedicalRecordsCount</span>
+                <span class="badge badge-warning">Prescriptions: @Model.PrescriptionsCount</span>
+            </div>
+        </div>
+
+    </div>
 </div>

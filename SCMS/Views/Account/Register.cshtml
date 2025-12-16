@@ -5,60 +5,80 @@
     Layout = "_AuthLayout";
 }
 
+<div class="auth-page">
+    <div class="auth-card card shadow-sm">
+        <h1 class="text-center mb-1" style="color: var(--primary); font-size: 26px;">📝 Register</h1>
 
-<div class="container" style="max-width: 500px; margin-top: 60px;">
-    <div class="card" style="padding: 30px;">
-        <h1 style="color: var(--primary); font-size: 28px; text-align:center;">📝 Register</h1>
-        <p style="margin: 15px 0; color: var(--text-muted); text-align:center;">
+        <p class="text-center mb-3" style="color: var(--text-muted); font-size: 14px;">
             Create a new account to access the Smart Clinic System
         </p>
 
-        <!-- Show all validation errors -->
-        <div asp-validation-summary="All" class="text-danger" style="margin-bottom:10px;"></div>
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
 
-        <form asp-action="Register" method="post">
-            <label asp-for="FullName">Full Name</label>
-            <input asp-for="FullName" placeholder="Enter your full name" required />
-            <span asp-validation-for="FullName" class="text-danger"></span>
+        <form asp-action="Register" method="post" novalidate>
 
-            <label asp-for="Email">Email</label>
-            <input asp-for="Email" type="email" placeholder="Enter your email" required />
-            <span asp-validation-for="Email" class="text-danger"></span>
+            <div class="mb-2">
+                <label asp-for="FullName" class="form-label mb-1">Full Name</label>
+                <input asp-for="FullName" class="form-control form-control-sm"
+                       placeholder="Enter your full name" required />
+                <span asp-validation-for="FullName" class="text-danger small"></span>
+            </div>
 
-            <label asp-for="Phone">Phone</label>
-            <input asp-for="Phone" type="text" placeholder="Enter your phone number" required />
-            <span asp-validation-for="Phone" class="text-danger"></span>
+            <div class="mb-2">
+                <label asp-for="Email" class="form-label mb-1">Email</label>
+                <input asp-for="Email" type="email" class="form-control form-control-sm"
+                       placeholder="Enter your email" required />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
 
-            <label asp-for="Username">Username</label>
-            <input asp-for="Username" placeholder="Choose a username" required />
-            <span asp-validation-for="Username" class="text-danger"></span>
+            <div class="mb-2">
+                <label asp-for="Phone" class="form-label mb-1">Phone</label>
+                <input asp-for="Phone" type="text" class="form-control form-control-sm"
+                       placeholder="Enter your phone number" required />
+                <span asp-validation-for="Phone" class="text-danger small"></span>
+            </div>
 
-            <label asp-for="Password">Password</label>
-            <input asp-for="Password" type="password" placeholder="Enter a password" required />
-            <span asp-validation-for="Password" class="text-danger"></span>
+            <div class="mb-2">
+                <label asp-for="Username" class="form-label mb-1">Username</label>
+                <input asp-for="Username" class="form-control form-control-sm"
+                       placeholder="Choose a username" required />
+                <span asp-validation-for="Username" class="text-danger small"></span>
+            </div>
 
-            <label asp-for="ConfirmPassword">Confirm Password</label>
-            <input asp-for="ConfirmPassword" type="password" placeholder="Confirm your password" required />
-            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            <div class="mb-2">
+                <label asp-for="Password" class="form-label mb-1">Password</label>
+                <input asp-for="Password" type="password" class="form-control form-control-sm"
+                       placeholder="Enter a password" required />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
 
-            <label asp-for="UserType">User Type</label>
-            <select asp-for="UserType" required>
-                <option value="">-- Select User Type --</option>
-                <option value="Patient">Patient</option>
-                <option value="Doctor">Doctor</option>
-                <option value="Receptionist">Receptionist</option>
-                <option value="Radiologist">Radiologist</option>
-                <option value="Admin">Admin</option>
-            </select>
-            <span asp-validation-for="UserType" class="text-danger"></span>
+            <div class="mb-2">
+                <label asp-for="ConfirmPassword" class="form-label mb-1">Confirm Password</label>
+                <input asp-for="ConfirmPassword" type="password" class="form-control form-control-sm"
+                       placeholder="Confirm your password" required />
+                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
 
-            <button type="submit" class="btn btn-primary" style="margin-top:20px;">
+            <div class="mb-3">
+                <label asp-for="UserType" class="form-label mb-1">User Type</label>
+                <select asp-for="UserType" class="form-select form-select-sm" required>
+                    <option value="">-- Select User Type --</option>
+                    <option value="Patient">Patient</option>
+                    <option value="Doctor">Doctor</option>
+                    <option value="Receptionist">Receptionist</option>
+                    <option value="Radiologist">Radiologist</option>
+                    <option value="Admin">Admin</option>
+                </select>
+                <span asp-validation-for="UserType" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 btn-sm">
                 Register
             </button>
         </form>
 
-        <div style="margin-top:15px; text-align:center;">
-            <a asp-action="Login" class="btn btn-secondary">Back to Login</a>
+        <div class="mt-2 text-center">
+            <a asp-action="Login" class="btn btn-secondary w-100 btn-sm">Back to Login</a>
         </div>
     </div>
 </div>
