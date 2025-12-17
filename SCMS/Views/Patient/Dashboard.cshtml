@@ -16,6 +16,7 @@
             💬 Chat with Clinic
         </a>
 
+
         @if (Model.IsProfileIncomplete)
         {
             <div class="profile-alert">
@@ -48,6 +49,19 @@
                 <div class="icon">📅</div>
             </div>
         </a>
+    <a asp-controller="Patient"
+       asp-action="RadiologyResults"
+       asp-route-id="@Model.PatientId"
+       class="dashboard-card-link">
+        <div class="dashboard-card">
+            <div>
+                <h4>Radiology Results</h4>
+                <span>🩻</span>
+            </div>
+            <div class="icon">🩻</div>
+        </div>
+    </a>
+
 
         <a asp-controller="Patient"
            asp-action="Prescriptions"
